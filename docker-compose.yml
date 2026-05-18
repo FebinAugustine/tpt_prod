@@ -39,7 +39,7 @@ services:
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
-      - "--certificatesresolvers.myresolver.acme.httpchallenge=true"
+      # FIXED: Updated syntax to drop legacy v2 style boolean flags
       - "--certificatesresolvers.myresolver.acme.httpchallenge.entrypoint=web"
       - "--certificatesresolvers.myresolver.acme.email=${LETSENCRYPT_EMAIL}"
       - "--certificatesresolvers.myresolver.acme.storage=/acme.json"
@@ -58,7 +58,15 @@ services:
     volumes:
       - mongo_data:/data/db
     networks:
-      - internal
+      internal:
+        aliases:
+          - mongodb
+    healthcheck:
+      test: echo 'db.runCommand({ping:1})' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
     deploy:
       resources:
         limits:
@@ -75,7 +83,15 @@ services:
     volumes:
       - redis_data:/data
     networks:
-      - internal
+      internal:
+        aliases:
+          - redis
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
     deploy:
       resources:
         limits:
@@ -90,8 +106,10 @@ services:
     restart: unless-stopped
     env_file: .env
     depends_on:
-      - mongodb
-      - redis
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - web
       - internal
@@ -131,7 +149,6 @@ services:
         failure_action: rollback 
     labels:
       - "traefik.enable=true"
-      # FIXED: Wrapped the Host rules inside parentheses so the && operator targets both domains properly
       - "traefik.http.routers.backend.rule=(Host(`${DOMAIN_NAME}`) || Host(`www.${DOMAIN_NAME}`)) && PathPrefix(`/api`)"
       - "traefik.http.routers.backend.entrypoints=websecure"
       - "traefik.http.routers.backend.tls.certresolver=myresolver"
@@ -168,7 +185,6 @@ services:
         failure_action: rollback
     labels:
       - "traefik.enable=true"
-      # FIXED: Unified your frontend root and www routes into a single clean router config, discarding the broken '.www.' child node structures
       - "traefik.http.routers.frontend.rule=Host(`${DOMAIN_NAME}`) || Host(`www.${DOMAIN_NAME}`)"
       - "traefik.http.routers.frontend.entrypoints=websecure"
       - "traefik.http.routers.frontend.tls.certresolver=myresolver"
