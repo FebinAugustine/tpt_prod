@@ -18,7 +18,7 @@ export default function UserDashboard() {
   // Handle redirects in useEffect to avoid render cycle issues
   useEffect(() => {
     if (!isHydrated) return;
-    
+
     if (!isAuthenticated || !user) {
       router.push("/login");
       return;
@@ -29,18 +29,6 @@ export default function UserDashboard() {
       return;
     }
   }, [isHydrated, isAuthenticated, user, router]);
-
-  // Show a loading state while the store is being hydrated
-  if (!isHydrated) {
-    return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-gray-600 text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p>Loading...</p>
-        </div>
-      </div>
-    );
-  }
 
   // Don't render dashboard if redirecting
   if (!isAuthenticated || !user || !user.isVerified) {

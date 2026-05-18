@@ -94,30 +94,55 @@ export const useAuthStore = create<AuthState>()(
         set({ error: null });
       },
 
-      init: async () => {
-        // Fetch current user profile to verify authentication status
-        try {
-          const response = await authApi.getProfile();
-          if (response.success && response.data) {
-            set({
-              user: response.data,
-              isAuthenticated: true,
-            });
-          } else {
-            set({
-              user: null,
-              isAuthenticated: false,
-            });
-          }
-        } catch {
-          set({
-            user: null,
-            isAuthenticated: false,
-          });
-        } finally {
-          set({ isHydrated: true });
-        }
-      },
+       init: async () => {
+         try {
+           // First check if we have a valid token in storage
+           const storedUser = localStorage.getItem('user');
+           const isAuth = localStorage.getItem('isAuthenticated') === 'true';
+           
+           if (storedUser && isAuth) {
+             // Optimistically set auth state from storage
+             set({
+               user: JSON.parse(storedUser),
+               isAuthenticated: true,
+               isHydrated: true,
+             });
+             
+             // Then verify with backend in background (non-blocking)
+             authApi.getProfile().then(response => {
+               if (!response.success || !response.data) {
+                 // Token invalid/invalid, logout
+                 set({ user: null, isAuthenticated: false });
+               }
+               // If valid, keep the optimistically set state
+             }).catch(() => {
+               // Network error - keep optimistic state, retry later
+             });
+             return;
+           }
+           
+           // No valid token in storage, do full check
+           const response = await authApi.getProfile();
+           if (response.success && response.data) {
+             set({
+               user: response.data,
+               isAuthenticated: true,
+             });
+           } else {
+             set({
+               user: null,
+               isAuthenticated: false,
+             });
+           }
+         } catch {
+           set({
+             user: null,
+             isAuthenticated: false,
+           });
+         } finally {
+           set({ isHydrated: true });
+         }
+       },
     }),
     {
       name: 'auth-storage',

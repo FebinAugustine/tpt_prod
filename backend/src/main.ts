@@ -4,13 +4,73 @@ import { ValidationPipe, VersioningType } from '@nestjs/common';
 import helmet from 'helmet';
 import { ConfigService } from '@nestjs/config';
 import cookieParser from 'cookie-parser';
-import { getConnectionToken } from '@nestjs/mongoose';
+import { getConnectionToken, getModelToken } from '@nestjs/mongoose';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { HttpExceptionFilter } from './common/exception-filters/http-exception.filter';
 import { validateConfig } from './config/validate.config';
 import { CorrelationIdMiddleware } from './common/middleware/correlation-id.middleware';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { Logger } from 'nestjs-pino';
+import { Model } from 'mongoose';
+import { User, UserDocument } from './auth/schemas/user.schema';
+import * as bcrypt from 'bcryptjs';
+
+// Initial users to seed
+const INITIAL_USERS = [
+  {
+    fullName: 'Admin User',
+    email: 'supporttpt@gmail.com',
+    password: 'AdminTpt@2026',
+    role: 'admin',
+    isVerified: true,
+  },
+  {
+    fullName: 'Test User',
+    email: 'tpttest@gmail.com',
+    password: 'Tpttest@2026',
+    role: 'user',
+    isVerified: true,
+  },
+];
+
+async function seedInitialUsers(app: any, logger: any) {
+  const userModel = app.get(getModelToken(User.name)) as Model<UserDocument>;
+  
+  const userCount = await userModel.countDocuments();
+  
+  if (userCount > 0) {
+    logger.log(`Found ${userCount} existing users. Skipping seeder.`);
+    return;
+  }
+  
+  logger.log('No users found. Seeding initial users...');
+  
+  for (const userData of INITIAL_USERS) {
+    try {
+      const existingUser = await userModel.findOne({ email: userData.email });
+      if (existingUser) {
+        continue;
+      }
+      
+      const hashedPassword = await bcrypt.hash(userData.password, 12);
+      
+      await userModel.create({
+        fullName: userData.fullName,
+        email: userData.email,
+        password: hashedPassword,
+        role: userData.role,
+        isVerified: userData.isVerified,
+        refreshTokens: [],
+      });
+      
+      logger.log(`Created ${userData.role} user: ${userData.email}`);
+    } catch (error) {
+      logger.error(`Failed to create user ${userData.email}:`, error.message);
+    }
+  }
+  
+  logger.log('Initial seeding completed.');
+}
 
 async function bootstrap() {
   // Validate environment variables before starting the application
@@ -122,6 +182,9 @@ async function bootstrap() {
       logger.log(
         `Database connection status: ${connection.readyState === 1 ? 'Connected' : 'Not connected'}`,
       );
+
+      // Seed initial users if no users exist
+      await seedInitialUsers(app, logger);
     } catch (error) {
       if (retries <= 0) {
         logger.error(`Failed to connect to database after multiple attempts: ${error.message}`);

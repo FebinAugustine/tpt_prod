@@ -40,5 +40,6 @@ docker-compose.override.yml
 # IDEs
 .idea/
 .vscode/
+.kilo
 *.swp
 *.swo

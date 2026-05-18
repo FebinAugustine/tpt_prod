@@ -26,7 +26,7 @@ export default function Login() {
   // Handle authenticated user redirect in useEffect to avoid render cycle issues
   useEffect(() => {
     if (!isHydrated) return;
-    
+
     if (isAuthenticated && user) {
       if (user.role === 'admin') {
         router.push("/admin-dashboard");
@@ -38,28 +38,9 @@ export default function Login() {
     }
   }, [isHydrated, isAuthenticated, user, router]);
 
-  // Show a loading state while the store is being hydrated
-  if (!isHydrated) {
-    return (
-      <div className="min-h-screen bg-linear-to-br from-blue-900 via-purple-900 to-black flex items-center justify-center">
-        <div className="text-white text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-400 mx-auto mb-4"></div>
-          <p>Checking authentication...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Don't render the form if redirecting
+  // Don't render the form if authenticated (will be handled by useEffect redirect)
   if (isAuthenticated && user) {
-    return (
-      <div className="min-h-screen bg-linear-to-br from-blue-900 via-purple-900 to-black flex items-center justify-center">
-        <div className="text-white text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-400 mx-auto mb-4"></div>
-          <p>Redirecting...</p>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {

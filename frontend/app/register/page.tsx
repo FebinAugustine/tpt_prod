@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   validateRegisterForm,
@@ -19,41 +19,37 @@ export default function Register() {
   const router = useRouter();
   const { register, isLoading, error, clearError, isAuthenticated, isHydrated, user } = useAuthStore();
 
-   // All useState hooks MUST be called before any conditional returns
-   const [formData, setFormData] = useState({
-     fullName: "",
-     email: "",
-     password: "",
-     confirmPassword: "",
-     phone: "",
-   });
+  // All useState hooks MUST be called before any conditional returns
+  const [formData, setFormData] = useState({
+    fullName: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    phone: "",
+  });
   const [errors, setErrors] = useState<ValidationError[]>([]);
   const [passwordStrength, setPasswordStrength] = useState<PasswordStrength | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [imageError, setImageError] = useState(false);
 
-  // Show a loading state while the store is being hydrated
-  if (!isHydrated) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-black flex items-center justify-center">
-        <div className="text-white text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-400 mx-auto mb-4"></div>
-          <p>Checking authentication...</p>
-        </div>
-      </div>
-    );
-  }
+  // Handle authenticated user redirect in useEffect to avoid render cycle issues
+  useEffect(() => {
+    if (!isHydrated) return;
 
-  // If user is authenticated, redirect to appropriate dashboard
-  if (isAuthenticated && user) {
-    if (user.role === 'admin') {
-      router.push("/admin-dashboard");
-    } else if (user.isVerified) {
-      router.push("/user-dashboard");
-    } else {
-      router.push("/not-verified");
+    if (isAuthenticated && user) {
+      if (user.role === 'admin') {
+        router.push("/admin-dashboard");
+      } else if (user.isVerified) {
+        router.push("/user-dashboard");
+      } else {
+        router.push("/not-verified");
+      }
     }
+  }, [isHydrated, isAuthenticated, user, router]);
+
+  // Don't render the form if authenticated (will be handled by useEffect redirect)
+  if (isAuthenticated && user) {
     return null;
   }
 

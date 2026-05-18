@@ -129,63 +129,81 @@ export default function AdminDashboard() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [stats, setStats] = useState<StatsData | null>(null);
+const [stats, setStats] = useState<StatsData | null>(null);
   const [isLoadingStats, setIsLoadingStats] = useState(true);
   const [categories, setCategories] = useState<any[]>([]);
 
-   // Fetch stats on component mount
-   useEffect(() => {
-     const fetchStats = async () => {
-       try {
-         const response = await authApi.getStats();
-         if (response.success && response.data) {
-           setStats(response.data);
-         } else {
-           console.error('Failed to fetch stats:', response.error);
-         }
-       } catch (error) {
-         console.error('Error fetching stats:', error);
-       } finally {
-         setIsLoadingStats(false);
-       }
-     };
+  // Fetch stats on component mount
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await authApi.getStats();
+        if (response.success && response.data) {
+          setStats(response.data);
+        } else {
+          console.error('Failed to fetch stats:', response.error);
+        }
+      } catch (error) {
+        console.error('Error fetching stats:', error);
+      } finally {
+        setIsLoadingStats(false);
+      }
+    };
 
-     if (isAuthenticated && user?.role === 'admin') {
-       fetchStats();
-     }
-   }, [isAuthenticated, user]);
+    if (isAuthenticated && user?.role === 'admin') {
+      fetchStats();
+    }
+  }, [isAuthenticated, user]);
 
-   // Fetch categories on mount
-   useEffect(() => {
-     const fetchCategories = async () => {
-       try {
-         const response = await authApi.getCategories();
-         if (response.success && response.data) {
-           setCategories(response.data);
-         }
-       } catch (error) {
-         console.error('Error fetching categories:', error);
-       }
-     };
+  // Fetch categories on mount
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await authApi.getCategories();
+        if (response.success && response.data) {
+          setCategories(response.data);
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      }
+    };
 
-     fetchCategories();
-   }, []);
+    fetchCategories();
+  }, []);
 
-  // Show a loading state while the store is being hydrated or stats are loading
-  if (!isHydrated || isLoadingStats) {
+  // Handle redirects in useEffect to avoid render cycle issues
+  useEffect(() => {
+    if (!isHydrated) return;
+
+    if (!isAuthenticated || !user || user.role !== 'admin') {
+      router.push("/login");
+      return;
+    }
+  }, [isHydrated, isAuthenticated, user, router]);
+
+  // Don't render dashboard if redirecting
+  if (!isAuthenticated || !user || user.role !== 'admin') {
+    return null;
+  }
+
+  // Show loading skeleton for stats while loading
+  if (isLoadingStats) {
     return (
-      <div className="min-h-screen bg-linear-to-br from-blue-900 via-purple-900 to-black flex items-center justify-center">
-        <div className="text-white text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-400 mx-auto mb-4"></div>
-          <p>Loading dashboard...</p>
+      <div className="min-h-screen bg-linear-to-br from-blue-900 via-purple-900 to-black">
+        <AdminNavbar />
+        <div className="container mx-auto px-4 py-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 animate-pulse">
+                <div className="h-6 bg-white/20 rounded mb-4"></div>
+                <div className="h-8 bg-white/20 rounded mb-2"></div>
+                <div className="h-4 bg-white/20 rounded w-3/4"></div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     );
-  }
-
-  if (!isAuthenticated || !user || user.role !== 'admin') {
-    router.push("/login");
-    return null;
   }
 
   const handleAddUser = async () => {

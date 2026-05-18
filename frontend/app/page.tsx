@@ -4,42 +4,22 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { useEffect } from "react";
 import { useAuthStore } from "./store/authStore";
+import { useRouter } from "next/navigation";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 
 export default function Home() {
   const { isAuthenticated, isHydrated, user } = useAuthStore();
+  const router = useRouter();
 
   useEffect(() => {
     if (isHydrated && isAuthenticated && user) {
-      // Authenticated users will be handled by middleware
+      // Redirect to dashboard for authenticated users
+      router.push('/user-dashboard');
     }
-  }, [isHydrated, isAuthenticated, user]);
+  }, [isHydrated, isAuthenticated, user, router]);
 
-  // Show a loading state while the store is being hydrated
-  if (!isHydrated) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-black flex items-center justify-center">
-        <div className="text-white text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-400 mx-auto mb-4"></div>
-          <p>Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // If user is authenticated, they will be redirected by middleware
-  if (isAuthenticated && user) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-black flex items-center justify-center">
-        <div className="text-white text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-400 mx-auto mb-4"></div>
-          <p>Redirecting to dashboard...</p>
-        </div>
-      </div>
-    );
-  }
-
+  // Always show home page immediately - don't block UI rendering
   return (
     <>
       <Navbar />

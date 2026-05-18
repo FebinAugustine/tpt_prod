@@ -13,10 +13,12 @@ volumes:
 services:
   # --- EDGE ROUTER, SSL, & TRAFFIC FILTERING ---
   traefik:
-    image: traefik:v3.0
+    image: traefik:v3.6.1
     container_name: traefik
     restart: unless-stopped
     env_file: .env
+    environment:
+      - DOCKER_API_VERSION=1.40
     security_opt:
       - no-new-privileges:true
     networks:
@@ -85,7 +87,6 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    # container_name: nestjs_backend
     restart: unless-stopped
     env_file: .env
     depends_on:
@@ -123,16 +124,15 @@ services:
         limits:
           cpus: '0.75'
           memory: 768M
-          # --- ADD THIS FOR ZERO DOWNTIME ---
       update_config:
-        order: start-first    # Start the new container before stopping the old one
-        parallelism: 1        # Update 1 replica at a time to maintain service capacity
-        delay: 5s             # Wait 5 seconds between updates
-        failure_action: rollback # Automatically revert if the new container crashes
+        order: start-first    
+        parallelism: 1        
+        delay: 5s             
+        failure_action: rollback 
     labels:
       - "traefik.enable=true"
-      # Expose API via /api route or a subdomain. Here we route everything under /api/v1 to the backend
-      - "traefik.http.routers.backend.rule=Host(`${DOMAIN_NAME}`, `www.${DOMAIN_NAME}`) && PathPrefix(`/api`)"
+      # FIXED: Wrapped the Host rules inside parentheses so the && operator targets both domains properly
+      - "traefik.http.routers.backend.rule=(Host(`${DOMAIN_NAME}`) || Host(`www.${DOMAIN_NAME}`)) && PathPrefix(`/api`)"
       - "traefik.http.routers.backend.entrypoints=websecure"
       - "traefik.http.routers.backend.tls.certresolver=myresolver"
       - "traefik.http.services.backend.loadbalancer.server.port=5000"
@@ -148,9 +148,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        # Passes production domain to Next.js during build compilation
         - NEXT_PUBLIC_API_URL=https://${DOMAIN_NAME}/api/v1
-    # container_name: nextjs_frontend
     restart: unless-stopped
     env_file: .env
     networks:
@@ -163,7 +161,6 @@ services:
         limits:
           cpus: '0.50'
           memory: 384M
-           # --- ADD THIS FOR ZERO DOWNTIME ---
       update_config:
         order: start-first
         parallelism: 1
@@ -171,12 +168,8 @@ services:
         failure_action: rollback
     labels:
       - "traefik.enable=true"
-      # Routes all non-API web traffic directly to Next.js frontend
-      - "traefik.http.routers.frontend.rule=Host(`${DOMAIN_NAME}`, `www.${DOMAIN_NAME}`)"
+      # FIXED: Unified your frontend root and www routes into a single clean router config, discarding the broken '.www.' child node structures
+      - "traefik.http.routers.frontend.rule=Host(`${DOMAIN_NAME}`) || Host(`www.${DOMAIN_NAME}`)"
       - "traefik.http.routers.frontend.entrypoints=websecure"
       - "traefik.http.routers.frontend.tls.certresolver=myresolver"
       - "traefik.http.services.frontend.loadbalancer.server.port=3000"
-      - "traefik.http.routers.frontend.middlewares=frontend-ratelimit,global-compress"
-      - "traefik.http.middlewares.frontend-ratelimit.ratelimit.average=200"
-      - "traefik.http.middlewares.frontend-ratelimit.ratelimit.burst=300"
-      - "traefik.http.middlewares.frontend-ratelimit.ratelimit.period=1s"
