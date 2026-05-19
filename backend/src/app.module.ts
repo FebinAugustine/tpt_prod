@@ -27,32 +27,9 @@ import { LoggingModule } from './common/modules/logging.module';
       load: [databaseConfig],
       isGlobal: true,
     }),
-    CacheModule.registerAsync({
+    CacheModule.register({
       isGlobal: true,
-      imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => {
-        const isProduction = process.env.NODE_ENV === 'production';
-        if (isProduction) {
-          try {
-            const { redisStore } = await import('cache-manager-redis-store');
-            return {
-              store: redisStore,
-              host: configService.get<string>('REDIS_HOST', 'localhost'),
-              port: configService.get<number>('REDIS_PORT', 6379),
-              password: configService.get<string>('REDIS_PASSWORD'),
-              ttl: 300,
-            };
-          } catch {
-            return {
-              ttl: 300,
-            };
-          }
-        }
-        return {
-          ttl: 300,
-        };
-      },
-      inject: [ConfigService],
+      ttl: 300,
     }),
     TerminusModule,
     ThrottlerModule.forRoot([
