@@ -26,16 +26,17 @@ WORKDIR /usr/src/app
 # Enforce standard Node production optimization flags
 ENV NODE_ENV=production
 
-# Copy only production runtime dependencies and the transpiled javascript from build stage
-COPY --from=builder /usr/src/app/package*.json ./
-RUN npm ci --omit=dev
-COPY --from=builder /usr/src/app/dist ./dist
-
-# Secure system files by assigning ownership to the built-in, unprivileged 'node' user
-RUN chown -R node:node /usr/src/app
-
-# Drop root privileges to execute the app within a low-privilege sandbox account
+# Drop root privileges early to execute the installation within a low-privilege sandbox account
 USER node
+
+# Copy only production runtime dependencies with the correct user ownership immediately
+COPY --from=builder --chown=node:node /usr/src/app/package*.json ./
+
+# Run npm ci (it will naturally create files owned by 'node' with zero overhead)
+RUN npm ci --omit=dev
+
+# Copy the transpiled javascript from the build stage with correct ownership
+COPY --from=builder --chown=node:node /usr/src/app/dist ./dist
 
 # Expose internal proxy routing port
 EXPOSE 5000
