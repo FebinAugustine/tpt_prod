@@ -10,7 +10,6 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './jwt.strategy';
 import { AdminGuard } from './guards/admin.guard';
-import { ThrottlerStorageService } from '@nestjs/throttler';
 import { ConfigurationException } from '../common/exceptions/ConfigurationException';
 import { LoggerModule } from 'nestjs-pino';
 import { CategoriesModule } from '../categories/categories.module';
@@ -40,7 +39,7 @@ import { AddressesModule } from '../addresses/addresses.module';
     AddressesModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, EmailService, TokenService, JwtStrategy, AdminGuard, ThrottlerStorageService],
+  providers: [AuthService, EmailService, TokenService, JwtStrategy, AdminGuard],
   exports: [AuthService],
 })
 export class AuthModule {}

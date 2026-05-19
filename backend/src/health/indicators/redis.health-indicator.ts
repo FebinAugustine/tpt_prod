@@ -8,12 +8,25 @@ export class RedisHealthIndicator extends HealthIndicator {
     super();
   }
 
-  async isHealthy(key: string = 'redis'): Promise<HealthIndicatorResult> {
+  async isHealthy(key: string = 'redis', timeoutMs: number = 3000): Promise<HealthIndicatorResult> {
     try {
       const testKey = `health:${key}:${Date.now()}`;
       const testValue = 'ok';
-      await this.cacheManager.set(testKey, testValue, 1);
-      const value = await this.cacheManager.get(testKey);
+      
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Redis timeout')), timeoutMs)
+      );
+      
+      await Promise.race([
+        this.cacheManager.set(testKey, testValue, 1),
+        timeoutPromise,
+      ]);
+      
+      const value = await Promise.race([
+        this.cacheManager.get(testKey),
+        timeoutPromise,
+      ]);
+      
       if (value === testValue) {
         return this.getStatus(key, true, { message: 'Redis connection verified' });
       }

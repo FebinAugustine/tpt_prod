@@ -86,6 +86,18 @@ async function bootstrap() {
   // Apply correlation ID middleware globally
   app.use(new CorrelationIdMiddleware().use);
 
+  // Add request timeout middleware (30 seconds)
+  app.use((req: any, res: any, next: any) => {
+    const timeout = setTimeout(() => {
+      if (!res.headersSent) {
+        res.status(504).json({ error: 'Request timeout' });
+      }
+    }, 25000);
+    res.on('finish', () => clearTimeout(timeout));
+    res.on('close', () => clearTimeout(timeout));
+    next();
+  });
+
   const allowedOrigins = (
     process.env.CORS_ORIGINS ||
     process.env.FRONTEND_URL ||

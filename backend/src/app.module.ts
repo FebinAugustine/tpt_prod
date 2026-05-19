@@ -33,13 +33,20 @@ import { LoggingModule } from './common/modules/logging.module';
       useFactory: async (configService: ConfigService) => {
         const isProduction = process.env.NODE_ENV === 'production';
         if (isProduction) {
-          const redisStore = require('cache-manager-redis-store');
-          return {
-            store: redisStore,
-            host: configService.get<string>('REDIS_HOST', 'localhost'),
-            port: configService.get<number>('REDIS_PORT', 6379),
-            ttl: 300,
-          };
+          try {
+            const { redisStore } = await import('cache-manager-redis-store');
+            return {
+              store: redisStore,
+              host: configService.get<string>('REDIS_HOST', 'localhost'),
+              port: configService.get<number>('REDIS_PORT', 6379),
+              password: configService.get<string>('REDIS_PASSWORD'),
+              ttl: 300,
+            };
+          } catch {
+            return {
+              ttl: 300,
+            };
+          }
         }
         return {
           ttl: 300,
@@ -51,13 +58,13 @@ import { LoggingModule } from './common/modules/logging.module';
     ThrottlerModule.forRoot([
       {
         name: 'default',
-        ttl: 60000,
+        ttl: 60,
         limit: 100,
       },
       {
-        name: 'short',
-        ttl: 10000,
-        limit: 30,
+        name: 'strict',
+        ttl: 60,
+        limit: 5,
       },
     ]),
     MongooseModule.forRootAsync({

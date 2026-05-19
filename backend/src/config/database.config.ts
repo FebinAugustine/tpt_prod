@@ -6,7 +6,9 @@ export default registerAs('database', () => {
     socketTimeoutMS: 45000,
     retryWrites: true,
     retryReads: true,
-    maxPoolSize: 10,
+    maxPoolSize: 20,
+    minPoolSize: 5,
+    maxIdleTimeMS: 30000,
     serverSelectionTimeoutMS: 30000,
   };
 

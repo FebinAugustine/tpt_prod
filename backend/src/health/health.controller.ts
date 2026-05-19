@@ -27,10 +27,7 @@ constructor(
   @ApiOkResponse({ description: 'Application is healthy' })
   check() {
     return this.health.check([
-      () =>
-        this.mongooseHealth.pingCheck('database', {
-          connection: this.connection,
-        }),
+      () => this.mongooseHealth.pingCheck('database', { connection: this.connection }),
       () => this.redisHealth.isHealthy('redis'),
       () => this.emailHealth.isHealthy('email'),
     ]);

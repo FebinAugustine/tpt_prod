@@ -31,8 +31,8 @@ import { OrdersService } from '../orders/orders.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { AdminGuard } from './guards/admin.guard';
 import { AdminOnly } from './decorators/admin.decorator';
-import { ThrottleGuard } from './guards/throttle.guard';
-import { ThrottleAuth } from './decorators/throttle.decorator';
+import { ThrottlerGuard } from '@nestjs/throttler';
+import { Throttle } from '@nestjs/throttler';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
@@ -55,10 +55,10 @@ export class AuthController {
     private configService: ConfigService,
   ) {}
 
-   @Post('login')
-   @UseGuards(ThrottleGuard)
-   @ThrottleAuth(5, 60000) // 5 attempts per minute
-   @HttpCode(HttpStatus.OK)
+@Post('login')
+    @UseGuards(ThrottlerGuard)
+    @Throttle({ strict: { limit: 5, ttl: 60 } })
+    @HttpCode(HttpStatus.OK)
    @ApiOperation({ summary: 'User login', description: 'Authenticate user with email and password' })
    @ApiBody({ type: LoginDto })
    @ApiOkResponse({ description: 'Login successful' })
@@ -117,10 +117,10 @@ export class AuthController {
     return { message: 'Logged out successfully' };
   }
 
-   @Post('refresh')
-   @UseGuards(ThrottleGuard)
-   @ThrottleAuth(5, 60000) // 5 attempts per minute
-   @HttpCode(HttpStatus.OK)
+@Post('refresh')
+    @UseGuards(ThrottlerGuard)
+    @Throttle({ strict: { limit: 5, ttl: 60 } })
+    @HttpCode(HttpStatus.OK)
    @ApiOperation({ summary: 'Refresh access token', description: 'Get new access token using refresh token' })
    @ApiOkResponse({ description: 'Token refreshed' })
    async refresh(@Request() req: any, @Res({ passthrough: true }) res: Response) {
