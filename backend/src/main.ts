@@ -65,7 +65,8 @@ async function seedInitialUsers(app: any, logger: any) {
       
       logger.log(`Created ${userData.role} user: ${userData.email}`);
     } catch (error) {
-      logger.error(`Failed to create user ${userData.email}:`, error.message);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error(`Failed to create user ${userData.email}: ${errorMessage}`);
     }
   }
   
@@ -179,31 +180,39 @@ async function bootstrap() {
     });
   }
 
-  // Database connection with retry logic
+    // Database connection check, seeding, and server initialization sequence
   const startServer = async (retries = 5, delay = 5000) => {
     try {
-      await app.listen(process.env.PORT ?? 5000);
-      logger.log(`Server is running on port ${process.env.PORT ?? 5000}`);
+      // 1. Verify database token status BEFORE opening the server port
+      const connection = app.get(getConnectionToken());
+      
+      if (connection.readyState !== 1) {
+        throw new Error('Mongoose connection readyState is not active (1)');
+      }
+      
+      logger.log('Database connection status: Connected');
+
+      // 2. Seed initial users safely while traffic is still paused
+      await seedInitialUsers(app, logger);
+
+      // 3. Finally, launch the server to accept traffic
+      const finalPort = process.env.PORT ?? 5000;
+      await app.listen(finalPort, '0.0.0.0'); // Explicitly bind host to 0.0.0.0 for stable Docker routing
+      
+      logger.log(`Server is running on port ${finalPort}`);
       if (process.env.NODE_ENV !== 'production') {
         logger.log(
-          `Swagger docs available at http://localhost:${process.env.PORT ?? 5000}/docs`,
+          `Swagger docs available at http://localhost:${finalPort}/docs`,
         );
       }
-
-      const connection = app.get(getConnectionToken());
-      logger.log(
-        `Database connection status: ${connection.readyState === 1 ? 'Connected' : 'Not connected'}`,
-      );
-
-      // Seed initial users if no users exist
-      await seedInitialUsers(app, logger);
-    } catch (error) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
       if (retries <= 0) {
-        logger.error(`Failed to connect to database after multiple attempts: ${error.message}`);
+        logger.error(`Failed to initialize server after multiple attempts: ${errorMessage}`);
         throw error;
       }
       logger.warn(
-        `Database connection failed. Retrying in ${delay}ms... (${retries} attempts left)`,
+        `Server startup or database connection failed. Retrying in ${delay}ms... (${retries} attempts left})`,
       );
       await new Promise((resolve) => setTimeout(resolve, delay));
       await startServer(retries - 1, delay * 1.5); // Exponential backoff
@@ -211,6 +220,7 @@ async function bootstrap() {
   };
 
   await startServer();
+
 }
 
 bootstrap();
