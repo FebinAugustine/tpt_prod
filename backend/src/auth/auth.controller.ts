@@ -55,14 +55,14 @@ export class AuthController {
     private configService: ConfigService,
   ) {}
 
-@Post('login')
-    @UseGuards(ThrottlerGuard)
-    @Throttle({ strict: { limit: 5, ttl: 60 } })
-    @HttpCode(HttpStatus.OK)
-   @ApiOperation({ summary: 'User login', description: 'Authenticate user with email and password' })
-   @ApiBody({ type: LoginDto })
-   @ApiOkResponse({ description: 'Login successful' })
-   async login(@Body() loginDto: LoginDto, @Res({ passthrough: true }) res: Response) {
+  @Post('login')
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ strict: { limit: 5, ttl: 60 } })
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'User login', description: 'Authenticate user with email and password' })
+  @ApiBody({ type: LoginDto })
+  @ApiOkResponse({ description: 'Login successful' })
+  async login(@Body() loginDto: LoginDto, @Res({ passthrough: true }) res: Response) {
     const result = await this.authService.login(loginDto);
 
     const { accessToken, refreshToken } = result;
@@ -117,13 +117,40 @@ export class AuthController {
     return { message: 'Logged out successfully' };
   }
 
-@Post('refresh')
-    @UseGuards(ThrottlerGuard)
-    @Throttle({ strict: { limit: 5, ttl: 60 } })
-    @HttpCode(HttpStatus.OK)
-   @ApiOperation({ summary: 'Refresh access token', description: 'Get new access token using refresh token' })
-   @ApiOkResponse({ description: 'Token refreshed' })
-   async refresh(@Request() req: any, @Res({ passthrough: true }) res: Response) {
+  @Post('register')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'User registration', description: 'Register a new user account' })
+  @ApiBody({ type: RegisterDto })
+  @ApiCreatedResponse({ description: 'User registered successfully' })
+  async register(@Body() registerDto: RegisterDto) {
+    return this.authService.register(registerDto);
+  }
+
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Forgot password', description: 'Send password reset email' })
+  @ApiBody({ type: ForgotPasswordDto })
+  @ApiOkResponse({ description: 'Password reset email sent' })
+  async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(forgotPasswordDto);
+  }
+
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Reset password', description: 'Reset password using token' })
+  @ApiBody({ type: ResetPasswordDto })
+  @ApiOkResponse({ description: 'Password reset successfully' })
+  async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
+    return this.authService.resetPassword(resetPasswordDto);
+  }
+
+  @Post('refresh')
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ strict: { limit: 5, ttl: 60 } })
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Refresh access token', description: 'Get new access token using refresh token' })
+  @ApiOkResponse({ description: 'Token refreshed' })
+  async refresh(@Request() req: any, @Res({ passthrough: true }) res: Response) {
     const refreshToken = req.cookies?.refreshToken;
 
     if (!refreshToken) {
@@ -155,34 +182,7 @@ export class AuthController {
       res.clearCookie('refreshToken', { path: '/' });
       return { success: false, error: 'Invalid refresh token' };
     }
-  }
-
-   @Post('register')
-   @HttpCode(HttpStatus.CREATED)
-   @ApiOperation({ summary: 'User registration', description: 'Register a new user account' })
-   @ApiBody({ type: RegisterDto })
-   @ApiCreatedResponse({ description: 'User registered successfully' })
-   async register(@Body() registerDto: RegisterDto) {
-    return this.authService.register(registerDto);
-  }
-
-   @Post('forgot-password')
-   @HttpCode(HttpStatus.OK)
-   @ApiOperation({ summary: 'Forgot password', description: 'Send password reset email' })
-   @ApiBody({ type: ForgotPasswordDto })
-   @ApiOkResponse({ description: 'Password reset email sent' })
-   async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
-    return this.authService.forgotPassword(forgotPasswordDto);
-  }
-
-   @Post('reset-password')
-   @HttpCode(HttpStatus.OK)
-   @ApiOperation({ summary: 'Reset password', description: 'Reset password using token' })
-   @ApiBody({ type: ResetPasswordDto })
-   @ApiOkResponse({ description: 'Password reset successfully' })
-   async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
-    return this.authService.resetPassword(resetPasswordDto);
-  }
+}
 
   @Get('profile')
   @UseGuards(JwtAuthGuard)
@@ -198,26 +198,26 @@ export class AuthController {
     return userWithoutPassword;
   }
 
-   @Post('add-user')
-   @UseGuards(JwtAuthGuard, AdminGuard)
-   @AdminOnly()
-   @HttpCode(HttpStatus.CREATED)
-   @ApiOperation({ summary: 'Add user (admin)', description: 'Create a new user (admin only)' })
-   @ApiBearerAuth()
-   @ApiBody({ type: AddUserDto })
-   @ApiCreatedResponse({ description: 'User added successfully' })
-   async addUser(@Body() addUserDto: AddUserDto) {
+  @Post('add-user')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @AdminOnly()
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Add user (admin)', description: 'Create a new user (admin only)' })
+  @ApiBearerAuth()
+  @ApiBody({ type: AddUserDto })
+  @ApiCreatedResponse({ description: 'User added successfully' })
+  async addUser(@Body() addUserDto: AddUserDto) {
     return this.authService.addUser(addUserDto);
   }
 
-   @Get('users')
-   @UseGuards(JwtAuthGuard, AdminGuard)
-   @AdminOnly()
-   @HttpCode(HttpStatus.OK)
-   @ApiOperation({ summary: 'Get all users (admin)', description: 'Get paginated list of users (admin only)' })
-   @ApiBearerAuth()
-   @ApiOkResponse({ description: 'Users retrieved successfully' })
-   async getUsers(
+  @Get('users')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @AdminOnly()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get all users (admin)', description: 'Get paginated list of users (admin only)' })
+  @ApiBearerAuth()
+  @ApiOkResponse({ description: 'Users retrieved successfully' })
+  async getUsers(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('search') search?: string,
@@ -227,36 +227,36 @@ export class AuthController {
     return this.authService.getAllUsers(pageNum, limitNum, search || '');
   }
 
-   @Put('users/:id')
-   @UseGuards(JwtAuthGuard, AdminGuard)
-   @AdminOnly()
-   @HttpCode(HttpStatus.OK)
-   @ApiOperation({ summary: 'Update user (admin)', description: 'Update user details (admin only)' })
-   @ApiBearerAuth()
-    @ApiOkResponse({ description: 'User updated successfully' })
-   async updateUser(@Param('id') id: string, @Body() updateData: any) {
+  @Put('users/:id')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @AdminOnly()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Update user (admin)', description: 'Update user details (admin only)' })
+  @ApiBearerAuth()
+  @ApiOkResponse({ description: 'User updated successfully' })
+  async updateUser(@Param('id') id: string, @Body() updateData: any) {
     return this.authService.updateUser(id, updateData);
   }
 
-   @Delete('users/:id')
-   @UseGuards(JwtAuthGuard, AdminGuard)
-   @AdminOnly()
-   @HttpCode(HttpStatus.OK)
-   @ApiOperation({ summary: 'Delete user (admin)', description: 'Delete a user (admin only)' })
-   @ApiBearerAuth()
-    @ApiOkResponse({ description: 'User deleted successfully' })
-   async deleteUser(@Param('id') id: string) {
+  @Delete('users/:id')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @AdminOnly()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Delete user (admin)', description: 'Delete a user (admin only)' })
+  @ApiBearerAuth()
+  @ApiOkResponse({ description: 'User deleted successfully' })
+  async deleteUser(@Param('id') id: string) {
     return this.authService.deleteUser(id);
   }
 
-   @Post('change-password')
-   @UseGuards(JwtAuthGuard)
-   @HttpCode(HttpStatus.OK)
-   @ApiOperation({ summary: 'Change password', description: 'Change user password (authenticated)' })
-   @ApiBearerAuth()
-   @ApiBody({ type: ChangePasswordDto })
-    @ApiOkResponse({ description: 'Password changed successfully' })
-   async changePassword(@Request() req: any, @Body() changePasswordDto: ChangePasswordDto) {
+  @Post('change-password')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Change password', description: 'Change user password (authenticated)' })
+  @ApiBearerAuth()
+  @ApiBody({ type: ChangePasswordDto })
+  @ApiOkResponse({ description: 'Password changed successfully' })
+  async changePassword(@Request() req: any, @Body() changePasswordDto: ChangePasswordDto) {
     return this.authService.changePassword(
       req.user.sub,
       changePasswordDto.currentPassword,
@@ -264,13 +264,13 @@ export class AuthController {
     );
   }
 
-   @Delete('account')
-   @UseGuards(JwtAuthGuard)
-   @HttpCode(HttpStatus.OK)
-   @ApiOperation({ summary: 'Delete account', description: 'Delete user account (authenticated)' })
-   @ApiBearerAuth()
-   @ApiOkResponse({ description: 'Account deleted successfully' })
-   async deleteAccount(@Request() req: any) {
+  @Delete('account')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Delete account', description: 'Delete user account (authenticated)' })
+  @ApiBearerAuth()
+  @ApiOkResponse({ description: 'Account deleted successfully' })
+  async deleteAccount(@Request() req: any) {
     return this.authService.deleteUserAccount(req.user.sub);
   }
 
