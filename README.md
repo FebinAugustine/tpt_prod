@@ -326,3 +326,14 @@ docker exec mongodb mongodump --username=$MONGO_ROOT_USER --password=$MONGO_ROOT
 - **API:** https://api.thepowertrainer.cloud  
 - **Documentation:** https://api.thepowertrainer.cloud/docs (only in non-production)
 
+# 1. Bring down the entire application network and destroy stuck volume bindings
+docker compose down --volumes --remove-orphans
+
+# 2. Delete Docker's internal compiler caches for the backend service completely
+docker builder prune -a -f
+
+# 3. Force Docker to rebuild your TypeScript files into JavaScript from scratch
+docker compose build --no-cache backend
+
+# 4. Spin up the entire infrastructure freshly in detached mode
+docker compose up -d --force-recreate
