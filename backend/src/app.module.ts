@@ -20,6 +20,7 @@ import { HealthModule } from './health/health.module';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { HttpExceptionFilter } from './common/exception-filters/http-exception.filter';
 import { LoggingModule } from './common/modules/logging.module';
+import { redisStore } from 'cache-manager-redis-yet';
 
 @Module({
   imports: [
@@ -27,9 +28,27 @@ import { LoggingModule } from './common/modules/logging.module';
       load: [databaseConfig],
       isGlobal: true,
     }),
-    CacheModule.register({
+    // 2. Replace your old CacheModule block with this async production setup:
+    CacheModule.registerAsync({
       isGlobal: true,
-      ttl: 300,
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: async (configService: ConfigService) => {
+        const host = configService.get<string>('REDIS_HOST') || 'redis';
+        const port = parseInt(configService.get<string>('REDIS_PORT') || '6379', 10);
+        const password = configService.get<string>('REDIS_PASSWORD');
+
+        return {
+          store: await redisStore({
+            socket: {
+              host,
+              port,
+            },
+            password,
+            ttl: 300 * 1000, // cache-manager-redis-yet uses milliseconds for TTL
+          }),
+        };
+      },
     }),
     TerminusModule,
     ThrottlerModule.forRoot([

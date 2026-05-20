@@ -150,21 +150,20 @@ services:
         failure_action: rollback 
     labels:
       - "traefik.enable=true"
-      # 1. Capture traffic hitting the API domain base cleanly
       - "traefik.http.routers.backend.rule=Host(`${DOMAIN_NAME}`) && PathPrefix(`/api`)"
       - "traefik.http.routers.backend.entrypoints=websecure"
       - "traefik.http.routers.backend.tls.certresolver=myresolver"
       
-      # 🚀 2. THE FIX: Register a StripPrefix middleware to remove the outer /api wrapper before forwarding
-      - "traefik.http.routers.backend.middlewares=backend-stripprefix,backend-ratelimit,global-compress"
-      - "traefik.http.middlewares.backend-stripprefix.stripprefix.prefixes=/api"
+      # 🚀 THE DEFINITIVE ROUTING FIX: Enforce priority over the frontend catch-all rule
+      - "traefik.http.routers.backend.priority=100"
       
-      # Keep your standard rate limits and compression rules exactly as they are below:
+      - "traefik.http.routers.backend.middlewares=backend-ratelimit,global-compress"
       - "traefik.http.services.backend.loadbalancer.server.port=5000"
       - "traefik.http.middlewares.backend-ratelimit.ratelimit.average=100"
       - "traefik.http.middlewares.backend-ratelimit.ratelimit.burst=150"
       - "traefik.http.middlewares.backend-ratelimit.ratelimit.period=1s"
       - "traefik.http.middlewares.global-compress.compress=true"
+
 
   # --- NEXTJS FRONTEND ---
   frontend:
@@ -192,13 +191,11 @@ services:
         failure_action: rollback
     labels:
       - "traefik.enable=true"
-      # Updated rule to capture both standard and www requests cleanly
       - "traefik.http.routers.frontend.rule=Host(`${DOMAIN_NAME}`) || Host(`www.${DOMAIN_NAME}`)"
       - "traefik.http.routers.frontend.entrypoints=websecure"
       - "traefik.http.routers.frontend.tls.certresolver=myresolver"
       
-      # 🚀 FIX: Match the identical new identifier set here
-      - "traefik.http.routers.frontend.tls.domains[0].main=${DOMAIN_NAME}"
-      - "traefik.http.routers.frontend.tls.domains[0].sans=www.${DOMAIN_NAME}"
+      # 🚀 LOWER PRIORITY: Ensures the frontend only captures requests that don't match the backend /api path
+      - "traefik.http.routers.frontend.priority=10"
       
       - "traefik.http.services.frontend.loadbalancer.server.port=3000"
