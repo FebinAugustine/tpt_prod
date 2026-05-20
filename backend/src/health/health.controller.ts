@@ -3,7 +3,7 @@ import { HealthCheck, HealthCheckService, HealthIndicatorResult } from '@nestjs/
 import { MongooseHealthIndicator } from '@nestjs/terminus';
 import { InjectConnection } from '@nestjs/mongoose';
 import { Connection } from 'mongoose';
-import { Redis } from 'ioredis';
+import Redis  from 'ioredis';
 import { ApiTags, ApiOperation, ApiOkResponse } from '@nestjs/swagger';
 
 @ApiTags('Health')
