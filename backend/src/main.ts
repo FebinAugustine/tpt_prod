@@ -111,7 +111,7 @@ async function bootstrap() {
 
   if (process.env.NODE_ENV === 'production') {
     allowedOrigins.push('https://thepowertrainer.cloud');
-    allowedOrigins.push('https://thepowertrainer.cloud');
+    allowedOrigins.push('https://www.thepowertrainer.cloud');
   }
 
   app.enableCors({
@@ -152,33 +152,61 @@ async function bootstrap() {
   app.use(cookieParser());
 
   // Database connection check & server initialization
-  const startServer = async (retries = 5, delay = 5000) => {
+    // Database connection check, seeding, and server initialization sequence
+  const startServer = async (retries = 10, delay = 3000) => {
     try {
+      // 1. Safe extraction of logger with standard fallback
+      let customLogger: any = console;
+      try {
+        if (process.env.NODE_ENV !== 'production' || !app.getHttpServer()) {
+          customLogger = app.get(Logger);
+        }
+      } catch {
+        customLogger = console; // Use standard node console if Pino isn't fully mounted
+      }
+
+      // 2. CRITICAL FIX: If running in preview mode, don't execute database queries
+      // This prevents the application context preview engine from crashing
+      const expressApp = app.getHttpAdapter().getInstance();
+      if (!expressApp) {
+        console.log('👉 App running in context preview optimization mode. Skipping DB connection checks.');
+        return;
+      }
+
       const connection = app.get(getConnectionToken());
       
-      // Look at connection state directly or let Mongoose handle it
-      if (connection.readyState !== 1 && connection.readyState !== 2) {
-        throw new Error(`Mongoose connection readyState is unhealthy: ${connection.readyState}`);
+      // readyState descriptions: 0 = disconnected, 1 = connected, 2 = connecting, 3 = disconnecting
+      if (connection.readyState !== 1) {
+        throw new Error(`Mongoose socket connection state is not active (ReadyState: ${connection.readyState})`);
       }
       
-      logger.log('Database connection status: Connected');
-      await seedInitialUsers(app, logger);
+      customLogger.log('Database connection status: Connected');
 
+      // 3. Seed initial users safely while traffic is still paused
+      await seedInitialUsers(app, customLogger);
+
+      // 4. Finally, launch the server to accept traffic
       const finalPort = process.env.PORT ?? 5000;
-      await app.listen(finalPort, '0.0.0.0');
+      await app.listen(finalPort, '0.0.0.0'); 
       
-      logger.log(`Server is running on port ${finalPort}`);
+      customLogger.log(`Server is running on port ${finalPort}`);
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error);
+      
+      // Safe logging fallback to guarantee the real error is printed onto the terminal screen
+      console.error(`⚠️ Startup Check Failed: ${errorMessage}`);
+      
       if (retries <= 0) {
-        logger.error(`Failed to initialize server: ${errorMessage}`);
+        console.error(`❌ Fatal: Failed to initialize server after multiple attempts.`);
         throw error;
       }
-      logger.warn(`Server startup or database connection failed. Retrying... (${retries} attempts left)`);
+      
+      console.warn(`🔄 Retrying infrastructure handshake in ${delay}ms... (${retries} attempts left)`);
       await new Promise((resolve) => setTimeout(resolve, delay));
-      await startServer(retries - 1, delay * 1.5);
+      await startServer(retries - 1, delay); 
     }
   };
+
 
   await startServer();
 }
