@@ -78,7 +78,7 @@ async function bootstrap() {
   await validateConfig();
 
   // 2. Instantiate Nest with an empty options block to let Pino attach cleanly
-  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  const app = await NestFactory.create(AppModule, { bufferLogs: false });
   
   // 3. Extract and assign the Pino logger instance safely
   const logger = app.get(Logger);
@@ -176,7 +176,7 @@ async function bootstrap() {
       const connection = app.get(getConnectionToken());
       
       // readyState descriptions: 0 = disconnected, 1 = connected, 2 = connecting, 3 = disconnecting
-      if (connection.readyState !== 1) {
+      if (connection.readyState !== 1 && connection.readyState !== 2) {
         throw new Error(`Mongoose socket connection state is not active (ReadyState: ${connection.readyState})`);
       }
       

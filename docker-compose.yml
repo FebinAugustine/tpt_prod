@@ -23,8 +23,8 @@ services:
     networks:
       - web
     ports:
-      - "80:80"
-      - "443:443"
+      - "0.0.0.0:80:80"
+      - "0.0.0.0:443:443"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./acme.json:/acme.json
@@ -135,8 +135,8 @@ services:
       - SMTP_FROM=${SMTP_FROM}
       - FRONTEND_URL=https://${DOMAIN_NAME}
       - CORS_ORIGINS=https://${DOMAIN_NAME},https://www.${DOMAIN_NAME}
-      - LOG_LEVEL=info
-      - LOG_CONSOLE_ENABLED=true
+      - LOG_LEVEL=warn
+      - LOG_CONSOLE_ENABLED=false
     deploy:
       replicas: 2
       resources:
@@ -153,6 +153,9 @@ services:
       - "traefik.http.routers.backend.rule=Host(`${DOMAIN_NAME}`) && PathPrefix(`/api`)"
       - "traefik.http.routers.backend.entrypoints=websecure"
       - "traefik.http.routers.backend.tls.certresolver=myresolver"
+
+      # Force Traefik to exclusively target the 'web' bridge network interface for this container
+      - "traefik.docker.network=tpt_prod_web"
       
       # 🚀 THE DEFINITIVE ROUTING FIX: Enforce priority over the frontend catch-all rule
       - "traefik.http.routers.backend.priority=100"
