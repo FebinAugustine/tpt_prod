@@ -74,20 +74,24 @@ async function seedInitialUsers(app: any, logger: any) {
 }
 
 async function bootstrap() {
-  // Validate environment variables before starting the application
+  // 1. Validate config before booting anything
   await validateConfig();
 
-  const app = await NestFactory.create(AppModule);
-  // Retrieve structured logger provided by LoggerModule
+  // 2. Instantiate Nest with an empty options block to let Pino attach cleanly
+  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  
+  // 3. Extract and assign the Pino logger instance safely
   const logger = app.get(Logger);
+  app.useLogger(logger);
 
-  // Apply security headers middleware
+  // 4. CRITICAL FIX: Tell Express to trust Traefik's proxy headers
+  const expressApp = app.getHttpAdapter().getInstance();
+  expressApp.set('trust proxy', 1);
+
   app.use(helmet());
-
-  // Apply correlation ID middleware globally
   app.use(new CorrelationIdMiddleware().use);
 
-  // Add request timeout middleware (30 seconds)
+  // Request timeout middleware
   app.use((req: any, res: any, next: any) => {
     const timeout = setTimeout(() => {
       if (!res.headersSent) {
@@ -105,10 +109,9 @@ async function bootstrap() {
     'http://localhost:3000,http://localhost:3001'
   ).split(',');
 
-  // Add production domain if in production
   if (process.env.NODE_ENV === 'production') {
     allowedOrigins.push('https://thepowertrainer.cloud');
-    allowedOrigins.push('https://www.thepowertrainer.cloud');
+    allowedOrigins.push('https://thepowertrainer.cloud');
   }
 
   app.enableCors({
@@ -118,13 +121,13 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
 
-  // Redirect HTTP to HTTPS in production
+  // 5. CRITICAL FIX: HTTPS redirect checking working with proxy headers
   if (process.env.NODE_ENV === 'production') {
     app.use((req, res, next) => {
-      if (req.headers['x-forwarded-proto'] !== 'https') {
-        return res.redirect(`https://${req.headers.host}${req.url}`);
+      if (req.secure || req.headers['x-forwarded-proto'] === 'https') {
+        return next();
       }
-      next();
+      return res.redirect(301, `https://${req.headers.host}${req.url}`);
     });
   }
 
@@ -140,87 +143,43 @@ async function bootstrap() {
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,
-      transformOptions: {
-        enableImplicitConversion: true,
-      },
+      transformOptions: { enableImplicitConversion: true },
     }),
   );
 
   app.useGlobalFilters(app.get(HttpExceptionFilter));
-
-  // Register response interceptor globally
   app.useGlobalInterceptors(app.get(ResponseInterceptor));
-
   app.use(cookieParser());
 
-  const config = new DocumentBuilder()
-    .setTitle('The Power Trainer API')
-    .setDescription('API for The Power Trainer App - Protein supplement store')
-    .setVersion('1.0')
-    .addBearerAuth()
-    .addTag('Auth', 'Authentication endpoints')
-    .addTag('Products', 'Product management')
-    .addTag('Orders', 'Order management')
-    .addTag('Categories', 'Category management')
-    .addTag('Settings', 'Settings management')
-    .addTag('Health', 'Health check endpoints')
-    .build();
-
-  const document = SwaggerModule.createDocument(app, config);
-  // Only enable Swagger in non-production environments
-  if (process.env.NODE_ENV !== 'production') {
-    SwaggerModule.setup('docs', app, document, {
-      swaggerOptions: {
-        persistAuthorization: true,
-      },
-      customCss: `
-        .swagger-ui .topbar { display: none }
-        .swagger-ui .info .title { font-size: 2.5em; }
-      `,
-    });
-  }
-
-    // Database connection check, seeding, and server initialization sequence
+  // Database connection check & server initialization
   const startServer = async (retries = 5, delay = 5000) => {
     try {
-      // 1. Verify database token status BEFORE opening the server port
       const connection = app.get(getConnectionToken());
       
-      if (connection.readyState !== 1) {
-        throw new Error('Mongoose connection readyState is not active (1)');
+      // Look at connection state directly or let Mongoose handle it
+      if (connection.readyState !== 1 && connection.readyState !== 2) {
+        throw new Error(`Mongoose connection readyState is unhealthy: ${connection.readyState}`);
       }
       
       logger.log('Database connection status: Connected');
-
-      // 2. Seed initial users safely while traffic is still paused
       await seedInitialUsers(app, logger);
 
-      // 3. Finally, launch the server to accept traffic
       const finalPort = process.env.PORT ?? 5000;
-      await app.listen(finalPort, '0.0.0.0'); // Explicitly bind host to 0.0.0.0 for stable Docker routing
+      await app.listen(finalPort, '0.0.0.0');
       
       logger.log(`Server is running on port ${finalPort}`);
-      if (process.env.NODE_ENV !== 'production') {
-        logger.log(
-          `Swagger docs available at http://localhost:${finalPort}/docs`,
-        );
-      }
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       if (retries <= 0) {
-        logger.error(`Failed to initialize server after multiple attempts: ${errorMessage}`);
+        logger.error(`Failed to initialize server: ${errorMessage}`);
         throw error;
       }
-      logger.warn(
-        `Server startup or database connection failed. Retrying in ${delay}ms... (${retries} attempts left})`,
-      );
+      logger.warn(`Server startup or database connection failed. Retrying... (${retries} attempts left)`);
       await new Promise((resolve) => setTimeout(resolve, delay));
-      await startServer(retries - 1, delay * 1.5); // Exponential backoff
+      await startServer(retries - 1, delay * 1.5);
     }
   };
 
   await startServer();
-
 }
-
 bootstrap();

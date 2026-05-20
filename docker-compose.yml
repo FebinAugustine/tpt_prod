@@ -129,7 +129,7 @@ services:
       - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
       - RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID}
       - RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET}
-      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - SMTP_PASS=${SMTP_PASSWORD}
       - SMTP_USER=${SMTP_USER}
       - SMTP_HOST=${SMTP_HOST}
       - SMTP_PORT=${SMTP_PORT}
@@ -151,8 +151,8 @@ services:
         failure_action: rollback 
     labels:
       - "traefik.enable=true"
-      # FIX 6: Configured router rule to process both explicit API paths smoothly
-      - "traefik.http.routers.backend.rule=Host(`${DOMAIN_NAME}`) && (PathPrefix(`/api`) || PathPrefix(`/api/v1`))"
+      # FIX: Simplified pattern match to cleanly cover all variations of /api
+      - "traefik.http.routers.backend.rule=Host(`${DOMAIN_NAME}`) && PathPrefix(`/api`)"
       - "traefik.http.routers.backend.entrypoints=websecure"
       - "traefik.http.routers.backend.tls.certresolver=myresolver"
       - "traefik.http.services.backend.loadbalancer.server.port=5000"

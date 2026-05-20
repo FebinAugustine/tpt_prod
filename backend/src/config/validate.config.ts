@@ -4,68 +4,68 @@ import { ConfigurationException } from '../common/exceptions/ConfigurationExcept
 
 export class AppConfig {
   @IsString()
-  readonly PORT: string;
+  readonly PORT!: string;
 
   @IsString()
-  readonly MONGODB_URI: string;
+  readonly MONGODB_URI!: string;
 
   @IsString()
-  readonly JWT_SECRET: string;
+  readonly JWT_SECRET!: string;
 
   @IsString()
-  readonly JWT_REFRESH_SECRET: string;
+  readonly JWT_REFRESH_SECRET!: string;
 
   @IsOptional()
   @IsString()
-  readonly CORS_ORIGINS: string;
+  readonly CORS_ORIGINS!: string;
 
   @IsOptional()
   @IsString()
-  readonly NODE_ENV: string;
+  readonly NODE_ENV!: string;
 
   @IsOptional()
   @IsString()
-  readonly REDIS_HOST: string;
-
-  @IsOptional()
-  @IsNumberString()
-  readonly REDIS_PORT: string;
-
-  @IsOptional()
-  @IsString()
-  readonly SMTP_HOST: string;
+  readonly REDIS_HOST!: string;
 
   @IsOptional()
   @IsNumberString()
-  readonly SMTP_PORT: string;
+  readonly REDIS_PORT!: string;
 
   @IsOptional()
   @IsString()
-  readonly SMTP_USER: string;
-
-  @IsOptional()
-  @IsString()
-  readonly SMTP_PASS: string;
-
-  @IsOptional()
-  @IsString()
-  readonly LOG_LEVEL: string;
-
-  @IsOptional()
-  @IsString()
-  readonly LOG_DIRECTORY: string;
+  readonly SMTP_HOST!: string;
 
   @IsOptional()
   @IsNumberString()
-  readonly LOG_RETENTION_DAYS: string;
+  readonly SMTP_PORT!: string;
 
   @IsOptional()
   @IsString()
-  readonly LOG_ROTATION_INTERVAL: string;
+  readonly SMTP_USER!: string;
 
   @IsOptional()
   @IsString()
-  readonly LOG_CONSOLE_ENABLED: string;
+  readonly SMTP_PASS!: string;
+
+  @IsOptional()
+  @IsString()
+  readonly LOG_LEVEL!: string;
+
+  @IsOptional()
+  @IsString()
+  readonly LOG_DIRECTORY!: string;
+
+  @IsOptional()
+  @IsNumberString()
+  readonly LOG_RETENTION_DAYS!: string;
+
+  @IsOptional()
+  @IsString()
+  readonly LOG_ROTATION_INTERVAL!: string;
+
+  @IsOptional()
+  @IsString()
+  readonly LOG_CONSOLE_ENABLED!: string;
 }
 
 export async function validateConfig(): Promise<void> {
@@ -75,8 +75,16 @@ export async function validateConfig(): Promise<void> {
   if (errors.length > 0) {
     const errorMessages = errors.map(
       (error) =>
-        `${error.property}: ${Object.values(error.constraints || {}).join(', ')}`,
+        `❌ [Config Error] -> ${error.property}: ${Object.values(error.constraints || {}).join(', ')}`,
     );
+    
+    // CRITICAL SAFETynet: Print clearly to stdout before throwing the exception.
+    // This ensures Docker logs capture the exact validation failure even if Pino is dead.
+    console.error('==================================================');
+    console.error('CRITICAL ERROR: APPLICATION CONFIGURATION FAILED');
+    errorMessages.forEach(msg => console.error(msg));
+    console.error('==================================================');
+
     throw new ConfigurationException(
       `Invalid configuration: ${errorMessages.join('; ')}`,
     );
