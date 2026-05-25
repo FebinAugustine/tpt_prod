@@ -351,17 +351,17 @@ export class AuthService {
   async updateUser(
     id: string,
     updateData: any,
-  ): Promise<{ message: string; user: Partial<User> }> {
+  ): Promise<any> {
     const user = await this.userModel.findById(id);
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
     // Update user
-    if (updateData.fullName) {
+    if (updateData.fullName !== undefined) {
       user.fullName = updateData.fullName;
     }
-    if (updateData.email) {
+    if (updateData.email !== undefined) {
       // Check if email is already taken by another user
       const existingUser = await this.userModel.findOne({
         email: updateData.email,
@@ -372,28 +372,28 @@ export class AuthService {
       }
       user.email = updateData.email;
     }
-    if (updateData.role) {
+    if (updateData.role !== undefined) {
       user.role = updateData.role;
-    }
-    if (updateData.isVerified !== undefined) {
-      user.isVerified = updateData.isVerified;
     }
     if (updateData.phone !== undefined) {
       user.phone = updateData.phone;
     }
-    if (updateData.password) {
+    if (updateData.password !== undefined) {
       user.password = await bcrypt.hash(updateData.password, 12);
     }
 
     await user.save();
 
-    // Return user without password
-    const { password, ...userWithoutPassword } = user.toObject();
-
-    return {
-      message: 'User updated successfully',
-      user: userWithoutPassword,
-    };
+    // Fetch the fresh user document to ensure all fields are populated
+    const freshUser = await this.userModel.findById(id).lean();
+    if (!freshUser) {
+      throw new NotFoundException('User not found');
+    }
+    
+    // Return user without sensitive fields
+    const { password, resetPasswordToken, resetPasswordExpires, __v, ...userWithoutPassword } = freshUser;
+    
+    return userWithoutPassword;
   }
 
   async deleteUser(id: string): Promise<{ message: string }> {

@@ -11,9 +11,9 @@ export const productApi = {
     return api.get<Product>(`/products/${id}`);
   },
 
-  searchProducts: async (query: string, limit = 10): Promise<ApiResponse<Product[]>> => {
-    return api.get<Product[]>(`/products/search?q=${encodeURIComponent(query)}&limit=${limit}`);
-  },
+   searchProducts: async (query: string, limit = 10): Promise<ApiResponse<Product[]>> => {
+     return api.get<Product[]>(`/products/search?q=${encodeURIComponent(query)}&limit=${limit}&_=${Date.now()}`);
+   },
 
   addProduct: async (productData: AddProductDto, images?: File[]): Promise<ApiResponse<Product>> => {
     const formData = new FormData();
@@ -40,7 +40,7 @@ export const productApi = {
     }
   },
 
-  updateProduct: async (id: string, productData: AddProductDto, images?: File[], removedImageIndices?: number[]): Promise<ApiResponse<Product>> => {
+  updateProduct: async (id: string, productData: AddProductDto, images?: File[], keptImageUrls?: string[]): Promise<ApiResponse<Product>> => {
     const formData = new FormData();
     formData.append('product', JSON.stringify(productData));
 
@@ -50,8 +50,8 @@ export const productApi = {
       });
     }
 
-    if (removedImageIndices && removedImageIndices.length > 0) {
-      formData.append('removedImageIndices', JSON.stringify(removedImageIndices));
+    if (Array.isArray(keptImageUrls)) {
+      formData.append('keptImageUrls', JSON.stringify(keptImageUrls));
     }
 
     try {

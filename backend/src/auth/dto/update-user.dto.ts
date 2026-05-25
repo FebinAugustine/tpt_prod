@@ -36,4 +36,10 @@ export class UpdateUserDto {
   @IsOptional()
   @IsBoolean()
   isVerified?: boolean;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  @Transform(({ value }) => value?.trim())
+  phone?: string;
 }

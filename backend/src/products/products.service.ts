@@ -165,17 +165,60 @@ export class ProductsService {
 
     // Get current images and filter out removed ones
     let currentImages = [...product.images];
-    const removedImageIndices = (updateData as any).removedImageIndices;
-    if (removedImageIndices && removedImageIndices.length > 0) {
-      // Sort indices in descending order to remove from end first (to not shift indices)
-      const sortedIndices = [...removedImageIndices].sort(
-        (a: number, b: number) => b - a,
-      );
-      sortedIndices.forEach((index: number) => {
-        if (index >= 0 && index < currentImages.length) {
-          currentImages.splice(index, 1);
+    const imagesToDelete: string[] = [];
+
+    // Primary reliable path: client explicitly sends the list of existing images to keep.
+    // Empty array means "delete all previous images".
+    const keptImageUrls = (updateData as any).keptImageUrls;
+    if (Array.isArray(keptImageUrls)) {
+      currentImages = [...keptImageUrls]; // authoritative from client
+
+      // Calculate what was removed for Cloudinary cleanup
+      const keptSet = new Set(keptImageUrls);
+      product.images.forEach((url: string) => {
+        if (!keptSet.has(url)) {
+          imagesToDelete.push(url);
         }
       });
+    } 
+    // Fallback legacy paths (kept for backward compatibility)
+    else {
+      const removedImageUrls: string[] = (updateData as any).removedImageUrls || [];
+      if (removedImageUrls.length > 0) {
+        removedImageUrls.forEach((url: string) => {
+          const idx = currentImages.indexOf(url);
+          if (idx !== -1) {
+            imagesToDelete.push(url);
+            currentImages.splice(idx, 1);
+          }
+        });
+      } else {
+        const removedImageIndices: number[] = (updateData as any).removedImageIndices || [];
+        if (removedImageIndices.length > 0) {
+          const sortedIndices = [...removedImageIndices].sort((a: number, b: number) => b - a);
+          sortedIndices.forEach((index: number) => {
+            if (index >= 0 && index < currentImages.length) {
+              imagesToDelete.push(currentImages[index]);
+              currentImages.splice(index, 1);
+            }
+          });
+        }
+      }
+    }
+
+    // Delete removed images from Cloudinary (best effort)
+    if (imagesToDelete.length > 0) {
+      const deletePromises = imagesToDelete.map(async (imageUrl) => {
+        try {
+          const publicId = this.extractCloudinaryPublicId(imageUrl);
+          if (publicId) {
+            await cloudinary.v2.uploader.destroy(publicId);
+          }
+        } catch (error) {
+          console.error('Error deleting removed image from Cloudinary:', error);
+        }
+      });
+      await Promise.all(deletePromises);
     }
 
     // Process images
@@ -208,6 +251,78 @@ export class ProductsService {
 
     const updatedProduct = await this.productModel
       .findByIdAndUpdate(id, { $set: updateData }, { returnDocument: 'after' })
+      .exec();
+
+    if (!updatedProduct) {
+      throw new NotFoundException('Product not found');
+    }
+
+    return updatedProduct;
+  }
+
+  async updateProductImages(
+    id: string,
+    files?: Express.Multer.File[],
+    keptImageUrls: string[] = [],
+  ): Promise<ProductDocument | null> {
+    const product = await this.productModel.findById(id).exec();
+    if (!product) {
+      throw new NotFoundException('Product not found');
+    }
+
+    // Start with the images the client wants to keep
+    let currentImages = [...keptImageUrls];
+    const imagesToDelete: string[] = [];
+
+    // Calculate what was removed for Cloudinary cleanup
+    const keptSet = new Set(keptImageUrls);
+    product.images.forEach((url: string) => {
+      if (!keptSet.has(url)) {
+        imagesToDelete.push(url);
+      }
+    });
+
+    // Delete removed images from Cloudinary (best effort)
+    if (imagesToDelete.length > 0) {
+      const deletePromises = imagesToDelete.map(async (imageUrl) => {
+        try {
+          const publicId = this.extractCloudinaryPublicId(imageUrl);
+          if (publicId) {
+            await cloudinary.v2.uploader.destroy(publicId);
+          }
+        } catch (error) {
+          console.error('Error deleting removed image from Cloudinary:', error);
+        }
+      });
+      await Promise.all(deletePromises);
+    }
+
+    // Upload new images to Cloudinary if files are provided
+    if (files && files.length > 0) {
+      const uploadPromises = files.map(async (file) => {
+        try {
+          const result: UploadApiResponse | UploadApiErrorResponse =
+            await cloudinary.v2.uploader.upload(file.path, {
+              folder: 'proteinapp/products',
+              quality: 'auto:good',
+              fetch_format: 'auto',
+              width: 800,
+              crop: 'limit',
+            });
+          return result.secure_url;
+        } catch (error) {
+          console.error('Error uploading image to Cloudinary:', error);
+          throw new InternalServerErrorException('Failed to upload image');
+        }
+      });
+
+      const newImages = await Promise.all(uploadPromises);
+      currentImages = [...currentImages, ...newImages];
+    }
+
+    // Update only the images field
+    const updatedProduct = await this.productModel
+      .findByIdAndUpdate(id, { $set: { images: currentImages } }, { returnDocument: 'after' })
       .exec();
 
     if (!updatedProduct) {
@@ -280,16 +395,25 @@ export class ProductsService {
     }
 
     const searchTerm = query.trim();
+    const escapedTerm = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-    return this.productModel
-      .find(
-        { $text: { $search: searchTerm }, inStock: true },
-        { score: { $meta: 'textScore' } },
-      )
-      .sort({ score: { $meta: 'textScore' } })
+    // Match against name, company, flavour, and manufacturer
+    const products = await this.productModel
+      .find({
+        $or: [
+          { name: { $regex: escapedTerm, $options: 'i' } },
+          { company: { $regex: escapedTerm, $options: 'i' } },
+          { flavour: { $regex: escapedTerm, $options: 'i' } },
+          { manufacturer: { $regex: escapedTerm, $options: 'i' } },
+        ],
+        inStock: true,
+      })
       .populate('category')
-      .limit(limit)
       .select('name images price offerPrice flavour company weight category')
+      .sort({ name: 1 })
+      .limit(limit)
       .exec();
+
+    return products;
   }
 }

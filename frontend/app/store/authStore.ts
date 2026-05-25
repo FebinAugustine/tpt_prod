@@ -14,6 +14,7 @@ interface AuthState {
   logout: () => void;
   clearError: () => void;
   init: () => Promise<void>;
+  updateUser: (user: User) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -90,10 +91,17 @@ export const useAuthStore = create<AuthState>()(
          });
        },
 
-      clearError: () => {
+clearError: () => {
         set({ error: null });
       },
 
+      updateUser: (updatedUser: User) => {
+        set({ 
+          user: updatedUser,
+          isAuthenticated: true,
+        });
+      },
+ 
        init: async () => {
          try {
            // First check if we have a valid token in storage

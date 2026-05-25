@@ -39,6 +39,8 @@ import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { AddUserDto } from './dto/add-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { WrapResponse } from '../common/decorators/wrap-response.decorator';
 import { ConfigService } from '@nestjs/config';
 import type { Response } from 'express';
 import { Logger } from 'nestjs-pino';
@@ -196,6 +198,18 @@ export class AuthController {
     }
     const { password, ...userWithoutPassword } = user.toObject();
     return userWithoutPassword;
+  }
+
+  @Put('profile')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Update user profile', description: 'Update current user profile information' })
+  @ApiBearerAuth()
+  @ApiBody({ type: UpdateUserDto })
+  @ApiOkResponse({ description: 'Profile updated successfully' })
+  @WrapResponse()
+  async updateProfile(@Request() req: any, @Body() updateProfileDto: UpdateUserDto) {
+    return this.authService.updateUser(req.user.sub, updateProfileDto);
   }
 
   @Post('add-user')

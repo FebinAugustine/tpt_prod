@@ -120,8 +120,8 @@ export default function OfferCardsSection({ className = "" }: OfferCardsSectionP
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
-          <h2 className="text-xl font-bold text-black">Special Offers</h2>
-          <p className="text-gray-600 text-sm">Grab the best deals</p>
+         <h2 className="text-sm font-bold text-black">Special Offers</h2>
+         <p className="text-gray-600 text-xs">Grab the best deals</p>
         </motion.div>
       </div>
 
@@ -148,16 +148,16 @@ export default function OfferCardsSection({ className = "" }: OfferCardsSectionP
               
               {/* Content - 30% */}
               <div className="w-[30%] p-2 md:p-3 flex flex-col justify-center">
-                <h3 className="text-gray-900 font-semibold text-xs md:text-sm line-clamp-2 group-hover:text-red-600 transition-colors">
-                  {card.title}
-                </h3>
-                {card.subtitle && (
-                  <p className="text-gray-500 text-[10px] md:text-xs mt-1 line-clamp-1">
-                    {card.subtitle}
-                  </p>
-                )}
-                {card.buttonText && (
-                  <span className="text-red-600 text-[10px] md:text-xs font-medium mt-1 md:mt-2 inline-block">
+               <h3 className="text-gray-900 font-semibold text-[11px] md:text-[12px] line-clamp-2 group-hover:text-red-600 transition-colors">
+               {card.title}
+               </h3>
+               {card.subtitle && (
+                 <p className="text-gray-500 text-[10px] md:text-[10px] mt-1 line-clamp-1">
+                   {card.subtitle}
+                 </p>
+               )}
+               {card.buttonText && (
+                 <span className="text-red-600 text-[10px] md:text-[10px] font-medium mt-1 md:mt-2 inline-block">
                     {card.buttonText} →
                   </span>
                 )}

@@ -178,8 +178,8 @@ export default function TrendingProductsSection({ isVerified, className = "" }: 
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
-          <h2 className="text-xl font-bold text-black">Trending Products</h2>
-          <p className="text-gray-600 text-sm">Hot picks right now</p>
+          <h2 className="text-sm font-bold text-black">Trending Products</h2>
+          <p className="text-gray-600 text-xs">Hot picks right now</p>
         </motion.div>
 
         {/* Navigation Arrows */}
@@ -230,143 +230,143 @@ export default function TrendingProductsSection({ isVerified, className = "" }: 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: index * 0.05 }}
-            className="flex-shrink-0 w-[140px] xs:w-[150px] sm:w-[170px] md:w-[200px] lg:w-[230px] xl:w-[260px] 2xl:w-[280px] bg-white hover:bg-gray-50 border border-gray-200 hover:border-orange-400 rounded-xl overflow-hidden transition-all duration-200 hover:shadow-lg group"
-          >
-            {/* Product Image */}
-            <div 
-              className="relative h-40 bg-gray-100 cursor-pointer overflow-hidden"
-              onClick={() => router.push(`/product/${product._id}`)}
-            >
-              {/* Trending Badge */}
-              <div className="absolute top-2 left-2 z-10">
-                <span className="bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded flex items-center gap-1">
-                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0113 13a2.99 2.99 0 01-.879 2.121z" />
-                  </svg>
-                  Trending
-                </span>
-              </div>
-              
-              {product.images && product.images.length > 0 ? (
-                <img
-                  src={product.images[0]}
-                  alt={product.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <svg className="w-12 h-12 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                </div>
-              )}
-              
-              {/* Out of Stock Overlay */}
-              {!product.inStock && (
-                <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                  <span className="text-white font-semibold text-sm px-3 py-1 bg-red-600 rounded">Out of Stock</span>
-                </div>
-              )}
-              
-              {/* Discount Badge */}
-              {product.offerPrice && product.price > product.offerPrice && isVerified && (
-                <div className="absolute top-2 right-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded">
-                  {getDiscount(product.price, product.offerPrice)}% OFF
-                </div>
-              )}
-
-              {/* Wishlist Button - positioned below discount badge */}
-              <div className="absolute bottom-2 right-2 z-10">
-                <WishlistButton 
-                  product={{
-                    _id: product._id,
-                    name: product.name,
-                    price: product.price,
-                    offerPrice: product.offerPrice,
-                    images: product.images,
-                    inStock: product.inStock,
-                  }}
-                  size="sm"
-                />
-              </div>
-            </div>
-
-            {/* Product Info */}
-            <div className="p-3">
-              {/* Product Name */}
-              <h3 
-                className="text-gray-900 text-sm font-semibold mb-1 line-clamp-1 cursor-pointer hover:text-orange-600 transition-colors"
-                onClick={() => router.push(`/product/${product._id}`)}
+                className="flex-shrink-0 w-[140px] xs:w-[150px] sm:w-[170px] md:w-[200px] lg:w-[230px] xl:w-[260px] 2xl:w-[280px] bg-white hover:bg-gray-50 border border-gray-200 hover:border-orange-400 rounded-xl overflow-hidden transition-all duration-200 hover:shadow-lg group"
               >
-                {product.name}
-              </h3>
-
-              {/* Price Section */}
-              <div className="mb-3">
-                {isVerified ? (
-                  <div className="space-y-1">
-                    {/* Regular Price */}
-                    <div className="flex items-center gap-2 flex-wrap">
-                      {product.offerPrice ? (
-                        <>
-                          <span className="text-gray-900 font-bold text-lg">
-                            {formatPrice(product.offerPrice)}
-                          </span>
-                          <span className="text-gray-500 line-through text-sm">
-                            {formatPrice(product.price)}
-                          </span>
-                        </>
-                      ) : (
-                        <span className="text-gray-900 font-bold text-lg">
-                          {formatPrice(product.price)}
-                        </span>
-                      )}
+                {/* Product Image */}
+                <div 
+                  className="relative h-40 bg-gray-100 cursor-pointer overflow-hidden"
+                  onClick={() => router.push(`/product/${product._id}`)}
+                >
+                  {/* Trending Badge */}
+                  <div className="absolute top-2 left-2 z-10">
+                    <span className="bg-orange-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1">
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0113 13a2.99 2.99 0 01-.879 2.121z" />
+                      </svg>
+                      Trending
+                    </span>
+                  </div>
+                  
+                  {product.images && product.images.length > 0 ? (
+                    <img
+                      src={product.images[0]}
+                      alt={product.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <svg className="w-10 h-10 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
                     </div>
-                    {/* Trainer Price */}
-                    {product.trainerPrice && product.trainerPrice > 0 && (
-                      <div className="flex items-center gap-1">
-                        <span className="text-emerald-600 text-xs font-medium">Trainer:</span>
-                        <span className="text-emerald-600 font-semibold text-sm">
-                          {formatPrice(product.trainerPrice)}
-                        </span>
+                  )}
+                  
+                  {/* Out of Stock Overlay */}
+                  {!product.inStock && (
+                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                      <span className="text-white font-semibold text-xs px-2.5 py-1 bg-red-600 rounded">Out of Stock</span>
+                    </div>
+                  )}
+                  
+                  {/* Discount Badge */}
+                  {product.offerPrice && product.price > product.offerPrice && isVerified && (
+                    <div className="absolute top-2 right-2 bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
+                      {getDiscount(product.price, product.offerPrice)}% OFF
+                    </div>
+                  )}
+
+                  {/* Wishlist Button - positioned below discount badge */}
+                  <div className="absolute bottom-2 right-2 z-10">
+                    <WishlistButton 
+                      product={{
+                        _id: product._id,
+                        name: product.name,
+                        price: product.price,
+                        offerPrice: product.offerPrice,
+                        images: product.images,
+                        inStock: product.inStock,
+                      }}
+                      size="sm"
+                    />
+                  </div>
+                </div>
+
+                {/* Product Info */}
+                 <div className="p-2 md:p-2.5">
+                  {/* Product Name */}
+                   <h3 
+                     className="text-gray-900 text-[11px] md:text-[12px] font-semibold mb-0.5 line-clamp-1 cursor-pointer hover:text-orange-600 transition-colors"
+                     onClick={() => router.push(`/product/${product._id}`)}
+                   >
+                    {product.name}
+                  </h3>
+
+                  {/* Price Section */}
+                   <div className="mb-2">
+                     {isVerified ? (
+                       <div className="space-y-0.5">
+                         {/* Regular Price */}
+                         <div className="flex items-center gap-1.5 flex-wrap">
+                           {product.offerPrice ? (
+                             <>
+                               <span className="text-gray-900 font-bold text-[11px] md:text-xs">
+                                 {formatPrice(product.offerPrice)}
+                               </span>
+                               <span className="text-gray-400 line-through text-[10px]">
+                                 {formatPrice(product.price)}
+                               </span>
+                             </>
+                           ) : (
+                             <span className="text-gray-900 font-bold text-[11px] md:text-xs">
+                               {formatPrice(product.price)}
+                             </span>
+                           )}
+                         </div>
+                         {/* Trainer Price */}
+                         {product.trainerPrice && product.trainerPrice > 0 && (
+                           <div className="flex items-center gap-1">
+                             <span className="text-emerald-600 text-[9px] font-medium">Trainer:</span>
+                             <span className="text-emerald-600 font-semibold text-[10px]">
+                               {formatPrice(product.trainerPrice)}
+                             </span>
+                           </div>
+                         )}
+                       </div>
+                     ) : (
+                       <div className="flex items-center gap-1.5">
+                         <span className="text-gray-500 text-[10px]">Not Verified</span>
+                        <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
                       </div>
                     )}
                   </div>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <span className="text-gray-600 text-sm">Not Verified</span>
-                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
-                  </div>
-                )}
-              </div>
 
-              {/* Add to Cart Button */}
-              <CartButton 
-                product={{
-                  _id: product._id,
-                  name: product.name,
-                  price: product.price,
-                  offerPrice: product.offerPrice,
-                  images: product.images,
-                  inStock: product.inStock,
-                  weight: product.weight,
-                  flavour: product.flavour,
-                }}
-                size="sm"
-                fullWidth
-                className="bg-orange-600 hover:bg-orange-700"
-              />
-            </div>
-          </motion.div>
+                  {/* Add to Cart Button */}
+                  <CartButton 
+                    product={{
+                      _id: product._id,
+                      name: product.name,
+                      price: product.price,
+                      offerPrice: product.offerPrice,
+                      images: product.images,
+                      inStock: product.inStock,
+                      weight: product.weight,
+                      flavour: product.flavour,
+                    }}
+                    size="sm"
+                    fullWidth
+                    className="bg-orange-600 hover:bg-orange-700"
+                  />
+                </div>
+              </motion.div>
         ))}
       </div>
 
       {/* Scroll hint for mobile */}
       {products.length > 3 && (
         <div className="flex justify-center mt-2 md:hidden">
-          <p className="text-gray-500 text-xs">Swipe to see more →</p>
+          <p className="text-gray-500 text-[10px]">Swipe to see more →</p>
         </div>
       )}
     </div>

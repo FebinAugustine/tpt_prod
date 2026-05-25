@@ -4,6 +4,7 @@ import {
   Body,
   Get,
   Put,
+  Patch,
   Delete,
   Param,
   Query,
@@ -32,7 +33,7 @@ import {
   ApiForbiddenResponse,
 } from '@nestjs/swagger';
 import { CacheKey, CacheTTL } from '@nestjs/cache-manager';
-import { CacheInterceptor } from '@nestjs/cache-manager';
+import { CacheInterceptor } from '../common/interceptors/cache.interceptor';
 
 const DEFAULT_CACHE_TTL = 300000; // 5 minutes
 
@@ -93,11 +94,9 @@ export class ProductsController {
 
   @Get('search')
   @HttpCode(HttpStatus.OK)
-  @CacheKey('products-search')
-  @CacheTTL(DEFAULT_CACHE_TTL)
   @ApiOperation({
     summary: 'Search products',
-    description: 'Search products by name or description',
+    description: 'Search products by name, company, flavour or manufacturer',
   })
   @ApiQuery({ name: 'q', description: 'Search query' })
   @ApiQuery({
@@ -139,6 +138,51 @@ export class ProductsController {
     return this.productsService.getProductById(id);
   }
 
+  @Patch(':id/images')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @AdminOnly()
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Update product images only',
+    description: 'Updates only the images of a product without modifying other fields (admin only)',
+  })
+  @ApiResponse({ status: 200, description: 'Product images updated' })
+  @ApiResponse({ status: 401, description: 'Not authenticated' })
+  @ApiForbiddenResponse({ description: 'Not an admin' })
+  @UseInterceptors(
+    FilesInterceptor('images', 8, {
+      storage: diskStorage({
+        destination: './uploads',
+        filename: (req, file, cb) => {
+          const uniqueSuffix =
+            Date.now() + '-' + Math.round(Math.random() * 1e9);
+          cb(null, `${uniqueSuffix}${extname(file.originalname)}`);
+        },
+      }),
+      fileFilter: (req, file, cb) => {
+        if (file.mimetype.match(/\/(jpg|jpeg|png|gif|webp)$/)) {
+          cb(null, true);
+        } else {
+          cb(new Error('Only image files are allowed!'), false);
+        }
+      },
+      limits: {
+        fileSize: 5 * 1024 * 1024, // 5MB limit per file
+      },
+    }),
+  )
+  @HttpCode(HttpStatus.OK)
+  async updateProductImages(
+    @Param('id') id: string,
+    @Req() req,
+    @UploadedFiles() files?: Express.Multer.File[],
+  ) {
+    const keptImageUrls = req.body.keptImageUrls
+      ? JSON.parse(req.body.keptImageUrls)
+      : [];
+    return this.productsService.updateProductImages(id, files, keptImageUrls);
+  }
+
   @Put(':id')
   @UseGuards(JwtAuthGuard, AdminGuard)
   @AdminOnly()
@@ -178,6 +222,9 @@ export class ProductsController {
     @Req() req,
     @UploadedFiles() files?: Express.Multer.File[],
   ) {
+    console.log('[updateProduct] req.body keys:', Object.keys(req.body));
+    console.log('[updateProduct] keptImageUrls raw:', req.body.keptImageUrls);
+    
     // Parse update data from FormData
     let updateData: Partial<AddProductDto>;
     if (req.body.product) {
@@ -188,6 +235,33 @@ export class ProductsController {
       }
     } else {
       throw new BadRequestException('Product data is required');
+    }
+
+    // Preferred: explicit list of images the client wants to keep (most reliable)
+    if (req.body.keptImageUrls) {
+      try {
+        (updateData as any).keptImageUrls = JSON.parse(req.body.keptImageUrls);
+        console.log('[updateProduct] Parsed keptImageUrls:', (updateData as any).keptImageUrls);
+      } catch (error) {
+        console.error('[updateProduct] Failed to parse keptImageUrls:', error);
+      }
+    } else {
+      console.log('[updateProduct] keptImageUrls not found in request');
+    }
+    
+    // Legacy support
+    if (req.body.removedImageUrls) {
+      try {
+        (updateData as any).removedImageUrls = JSON.parse(req.body.removedImageUrls);
+      } catch (error) {
+        // ignore
+      }
+    } else if (req.body.removedImageIndices) {
+      try {
+        (updateData as any).removedImageIndices = JSON.parse(req.body.removedImageIndices);
+      } catch (error) {
+        // ignore
+      }
     }
 
     return this.productsService.updateProduct(id, updateData, files);

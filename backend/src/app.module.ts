@@ -17,6 +17,7 @@ import { AddressesModule } from './addresses/addresses.module';
 import { CareersModule } from './careers/careers.module';
 import { PressModule } from './press/press.module';
 import { HealthModule } from './health/health.module';
+import { BackupModule } from './backup/backup.module';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { HttpExceptionFilter } from './common/exception-filters/http-exception.filter';
 import { LoggingModule } from './common/modules/logging.module';
@@ -38,15 +39,20 @@ import { redisStore } from 'cache-manager-redis-yet';
         const port = parseInt(configService.get<string>('REDIS_PORT') || '6379', 10);
         const password = configService.get<string>('REDIS_PASSWORD');
 
+        const storeConfig: any = {
+          socket: {
+            host,
+            port,
+          },
+          ttl: 300 * 1000,
+        };
+
+        if (password) {
+          storeConfig.password = password;
+        }
+
         return {
-          store: await redisStore({
-            socket: {
-              host,
-              port,
-            },
-            password,
-            ttl: 300 * 1000, // cache-manager-redis-yet uses milliseconds for TTL
-          }),
+          store: await redisStore(storeConfig),
         };
       },
     }),
@@ -82,6 +88,7 @@ import { redisStore } from 'cache-manager-redis-yet';
     AddressesModule,
     CareersModule,
     PressModule,
+    BackupModule,
   ],
   controllers: [AppController],
   providers: [

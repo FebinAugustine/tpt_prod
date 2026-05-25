@@ -32,8 +32,8 @@ export default function AdminNavbar() {
   };
 
   return (
-    <nav className="bg-white/10 backdrop-blur-lg border-b border-white/20 sticky top-0 z-50">
-      <div className="container mx-auto px-4">
+    <nav className="bg-solid-slate-nav border-b border-slate-700/60 sticky top-0 z-50">
+      <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Company Name */}
           <div 
@@ -41,10 +41,10 @@ export default function AdminNavbar() {
             onClick={() => router.push("/admin-dashboard")}
           >
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-linear-to-br from-red-500 to-orange-600 rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform">
-                <span className="text-white font-bold">A</span>
+              <div className="w-8 h-8 bg-linear-to-br from-orange-500 to-amber-500 rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform shadow-lg shadow-orange-500/20">
+                <span className="text-white font-bold text-sm">A</span>
               </div>
-              <span className="text-xl font-bold text-white tracking-tight group-hover:text-red-300 transition-colors">
+              <span className="text-lg font-bold text-white tracking-tight group-hover:text-amber-400 transition-colors">
                 Admin Panel
               </span>
             </div>
@@ -58,13 +58,13 @@ export default function AdminNavbar() {
             <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-white/10 transition-all duration-200 group"
+                className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-slate-700/50 transition-all duration-200 group"
               >
-                <div className="w-8 h-8 bg-linear-to-br from-red-500 to-orange-600 rounded-full flex items-center justify-center text-white font-medium group-hover:scale-105 transition-transform">
+                <div className="w-8 h-8 bg-linear-to-br from-orange-500 to-amber-500 rounded-full flex items-center justify-center text-white font-medium group-hover:scale-105 transition-transform shadow-md shadow-orange-500/25">
                   {user?.fullName?.charAt(0)?.toUpperCase() || 'A'}
                 </div>
                 <svg 
-                  className={`h-4 w-4 text-gray-300 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`}
+                  className={`h-4 w-4 text-slate-400 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`}
                   fill="none" 
                   stroke="currentColor" 
                   viewBox="0 0 24 24"
@@ -86,17 +86,17 @@ export default function AdminNavbar() {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -10, scale: 0.95 }}
                     transition={{ duration: 0.2 }}
-                    className="absolute right-0 mt-2 w-64 bg-white/50 dark:bg-gray-800 border border-white/20 rounded-xl shadow-2xl overflow-hidden"
+                    className="absolute right-0 mt-2 w-72 bg-solid-slate border border-slate-700/60 rounded-xl shadow-2xl shadow-black/60 overflow-hidden"
                   >
                     {/* User Info */}
-                    <div className="p-4 border-b border-white/20">
+                    <div className="p-4 border-b border-slate-700/40">
                       <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-linear-to-br from-red-500 to-orange-600 rounded-full flex items-center justify-center text-gray-800 dark:text-white font-medium">
+                        <div className="w-11 h-11 bg-linear-to-br from-orange-500 to-amber-500 rounded-full flex items-center justify-center text-white font-semibold shadow-md shadow-orange-500/25">
                           {user?.fullName?.charAt(0)?.toUpperCase() || 'A'}
                         </div>
                         <div>
-                          <p className=" font-semibold text-gray-800 dark:text-white">{user?.fullName}</p>
-                          <p className=" text-sm text-gray-800 dark:text-white">{user?.email}</p>
+                          <p className="font-semibold text-white">{user?.fullName}</p>
+                          <p className="text-sm text-slate-400">{user?.email}</p>
                         </div>
                       </div>
                     </div>
@@ -108,10 +108,10 @@ export default function AdminNavbar() {
                           router.push("/all-users");
                           setIsDropdownOpen(false);
                         }}
-                        className="w-full flex items-center gap-3 px-4 py-3 text-left text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-200"
+                        className="w-full flex items-center gap-3 px-4 py-3 text-left text-slate-300 hover:text-white hover:bg-slate-700/40 transition-all duration-200"
                       >
                         <svg 
-                          className="h-5 w-5" 
+                          className="h-5 w-5 text-slate-400" 
                           fill="none" 
                           stroke="currentColor" 
                           viewBox="0 0 24 24"
@@ -119,45 +119,91 @@ export default function AdminNavbar() {
                           <path 
                             strokeLinecap="round" 
                             strokeLinejoin="round" 
-                            strokeWidth={2} 
+                            strokeWidth={1.75} 
                             d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" 
                           />
                         </svg>
-                        <span>All Users</span>
+                        <span className="font-medium">All Users</span>
                       </button>
 
-                      <button
-                        onClick={() => {
-                          router.push("/all-products");
-                          setIsDropdownOpen(false);
-                        }}
-                        className="w-full flex items-center gap-3 px-4 py-3 text-left text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-200"
-                      >
-                        <svg 
-                          className="h-5 w-5" 
-                          fill="none" 
-                          stroke="currentColor" 
-                          viewBox="0 0 24 24"
+<button
+                          onClick={() => {
+                            router.push("/admin/all-products");
+                            setIsDropdownOpen(false);
+                          }}
+                          className="w-full flex items-center gap-3 px-4 py-3 text-left text-slate-300 hover:text-white hover:bg-slate-700/40 transition-all duration-200"
                         >
-                          <path 
-                            strokeLinecap="round" 
-                            strokeLinejoin="round" 
-                            strokeWidth={2} 
-                            d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" 
-                          />
-                        </svg>
-                        <span>All Products</span>
-                      </button>
+                          <svg 
+                            className="h-5 w-5 text-slate-400" 
+                            fill="none" 
+                            stroke="currentColor" 
+                            viewBox="0 0 24 24"
+                          >
+                            <path 
+                              strokeLinecap="round" 
+                              strokeLinejoin="round" 
+                              strokeWidth={1.75} 
+                              d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" 
+                            />
+                          </svg>
+                          <span className="font-medium">All Products</span>
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            router.push("/admin/all-banners");
+                            setIsDropdownOpen(false);
+                          }}
+                          className="w-full flex items-center gap-3 px-4 py-3 text-left text-slate-300 hover:text-white hover:bg-slate-700/40 transition-all duration-200"
+                        >
+                          <svg 
+                            className="h-5 w-5 text-slate-400" 
+                            fill="none" 
+                            stroke="currentColor" 
+                            viewBox="0 0 24 24"
+                          >
+                            <path 
+                              strokeLinecap="round" 
+                              strokeLinejoin="round" 
+                              strokeWidth={1.75} 
+                              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 12h.01M12 12h.01M18 12h.01" 
+                            />
+                          </svg>
+                          <span className="font-medium">All Banners</span>
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            router.push("/admin/all-offer-cards");
+                            setIsDropdownOpen(false);
+                          }}
+                          className="w-full flex items-center gap-3 px-4 py-3 text-left text-slate-300 hover:text-white hover:bg-slate-700/40 transition-all duration-200"
+                        >
+                          <svg 
+                            className="h-5 w-5 text-slate-400" 
+                            fill="none" 
+                            stroke="currentColor" 
+                            viewBox="0 0 24 24"
+                          >
+                            <path 
+                              strokeLinecap="round" 
+                              strokeLinejoin="round" 
+                              strokeWidth={1.75} 
+                              d="M9 12l2 2 4-4M20 12v6a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h12a2 2 0 012 2v6z" 
+                            />
+                          </svg>
+                          <span className="font-medium">All Offer Cards</span>
+                        </button>
 
                       <button
                         onClick={() => {
                           router.push("/all-categories");
                           setIsDropdownOpen(false);
                         }}
-                        className="w-full flex items-center gap-3 px-4 py-3 text-left text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-200"
+                        className="w-full flex items-center gap-3 px-4 py-3 text-left text-slate-300 hover:text-white hover:bg-slate-700/40 transition-all duration-200"
                       >
                         <svg 
-                          className="h-5 w-5" 
+                          className="h-5 w-5 text-slate-400" 
                           fill="none" 
                           stroke="currentColor" 
                           viewBox="0 0 24 24"
@@ -165,18 +211,18 @@ export default function AdminNavbar() {
                           <path 
                             strokeLinecap="round" 
                             strokeLinejoin="round" 
-                            strokeWidth={2} 
+                            strokeWidth={1.75} 
                             d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" 
                           />
                         </svg>
-                        <span>All Categories</span>
+                        <span className="font-medium">All Categories</span>
                       </button>
 
-                      <div className="border-t border-white/20 my-1"></div>
+                      <div className="border-t border-slate-700/40 my-1"></div>
 
                       <button
                         onClick={handleLogout}
-                        className="w-full flex items-center gap-3 px-4 py-3 text-left text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all duration-200"
+                        className="w-full flex items-center gap-3 px-4 py-3 text-left text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition-all duration-200"
                       >
                         <svg 
                           className="h-5 w-5" 
@@ -187,11 +233,11 @@ export default function AdminNavbar() {
                           <path 
                             strokeLinecap="round" 
                             strokeLinejoin="round" 
-                            strokeWidth={2} 
+                            strokeWidth={1.75} 
                             d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" 
                           />
                         </svg>
-                        <span>Logout</span>
+                        <span className="font-medium">Logout</span>
                       </button>
                     </div>
                   </motion.div>
@@ -204,7 +250,7 @@ export default function AdminNavbar() {
           <div className="md:hidden flex items-center gap-4">
             <button 
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="p-2 text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-200"
+              className="p-2 text-slate-400 hover:text-white hover:bg-slate-700/50 rounded-lg transition-all duration-200"
             >
               <svg 
                 className="h-6 w-6" 
@@ -242,7 +288,7 @@ export default function AdminNavbar() {
               transition={{ duration: 0.2 }}
               className="md:hidden overflow-hidden"
             >
-              <div className="px-2 pt-2 pb-3 space-y-1 bg-white/5 rounded-lg">
+              <div className="px-3 pt-2 pb-3 space-y-1 bg-solid-slate rounded-lg">
 
                 {/* Mobile Menu Items */}
                 <div className="space-y-1">
@@ -251,10 +297,10 @@ export default function AdminNavbar() {
                       router.push("/all-users");
                       setIsMobileMenuOpen(false);
                     }}
-                    className="flex items-center gap-3 px-3 py-3 text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-200 w-full"
+                    className="flex items-center gap-3 px-3 py-3 text-slate-300 hover:text-white hover:bg-slate-700/40 transition-all duration-200 w-full"
                   >
                     <svg 
-                      className="h-6 w-6" 
+                      className="h-6 w-6 text-slate-400" 
                       fill="none" 
                       stroke="currentColor" 
                       viewBox="0 0 24 24"
@@ -262,45 +308,91 @@ export default function AdminNavbar() {
                       <path 
                         strokeLinecap="round" 
                         strokeLinejoin="round" 
-                        strokeWidth={2} 
+                        strokeWidth={1.75} 
                         d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" 
                       />
                     </svg>
-                    <span>All Users</span>
+                    <span className="font-medium">All Users</span>
                   </button>
 
-                  <button
-                    onClick={() => {
-                      router.push("/all-products");
-                      setIsMobileMenuOpen(false);
-                    }}
-                    className="flex items-center gap-3 px-3 py-3 text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-200 w-full"
-                  >
-                    <svg 
-                      className="h-6 w-6" 
-                      fill="none" 
-                      stroke="currentColor" 
-                      viewBox="0 0 24 24"
+<button
+                      onClick={() => {
+                        router.push("/admin/all-products");
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className="flex items-center gap-3 px-3 py-3 text-slate-300 hover:text-white hover:bg-slate-700/40 transition-all duration-200 w-full"
                     >
-                      <path 
-                        strokeLinecap="round" 
-                        strokeLinejoin="round" 
-                        strokeWidth={2} 
-                        d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" 
-                      />
-                    </svg>
-                    <span>All Products</span>
-                  </button>
+                      <svg 
+                        className="h-6 w-6 text-slate-400" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24"
+                      >
+                        <path 
+                          strokeLinecap="round" 
+                          strokeLinejoin="round" 
+                          strokeWidth={1.75} 
+                          d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" 
+                        />
+                      </svg>
+                      <span className="font-medium">All Products</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        router.push("/admin/all-banners");
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className="flex items-center gap-3 px-3 py-3 text-slate-300 hover:text-white hover:bg-slate-700/40 transition-all duration-200 w-full"
+                    >
+                      <svg 
+                        className="h-6 w-6 text-slate-400" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24"
+                      >
+                        <path 
+                          strokeLinecap="round" 
+                          strokeLinejoin="round" 
+                          strokeWidth={1.75} 
+                          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 12h.01M12 12h.01M18 12h.01" 
+                        />
+                      </svg>
+                      <span className="font-medium">All Banners</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        router.push("/admin/all-offer-cards");
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className="flex items-center gap-3 px-3 py-3 text-slate-300 hover:text-white hover:bg-slate-700/40 transition-all duration-200 w-full"
+                    >
+                      <svg 
+                        className="h-6 w-6 text-slate-400" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24"
+                      >
+                        <path 
+                          strokeLinecap="round" 
+                          strokeLinejoin="round" 
+                          strokeWidth={1.75} 
+                          d="M9 12l2 2 4-4M20 12v6a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h12a2 2 0 012 2v6z" 
+                        />
+                      </svg>
+                      <span className="font-medium">All Offer Cards</span>
+                    </button>
 
                   <button
                     onClick={() => {
                       router.push("/all-categories");
                       setIsMobileMenuOpen(false);
                     }}
-                    className="flex items-center gap-3 px-3 py-3 text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-200 w-full"
+                    className="flex items-center gap-3 px-3 py-3 text-slate-300 hover:text-white hover:bg-slate-700/40 transition-all duration-200 w-full"
                   >
                     <svg 
-                      className="h-6 w-6" 
+                      className="h-6 w-6 text-slate-400" 
                       fill="none" 
                       stroke="currentColor" 
                       viewBox="0 0 24 24"
@@ -308,16 +400,16 @@ export default function AdminNavbar() {
                       <path 
                         strokeLinecap="round" 
                         strokeLinejoin="round" 
-                        strokeWidth={2} 
+                        strokeWidth={1.75} 
                         d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" 
                       />
                     </svg>
-                    <span>All Categories</span>
+                    <span className="font-medium">All Categories</span>
                   </button>
 
                   <button
                     onClick={handleLogout}
-                    className="flex items-center gap-3 px-3 py-3 text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all duration-200 w-full"
+                    className="flex items-center gap-3 px-3 py-3 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition-all duration-200 w-full"
                   >
                     <svg 
                       className="h-6 w-6" 
@@ -328,11 +420,11 @@ export default function AdminNavbar() {
                       <path 
                         strokeLinecap="round" 
                         strokeLinejoin="round" 
-                        strokeWidth={2} 
+                        strokeWidth={1.75} 
                         d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" 
                       />
                     </svg>
-                    <span>Logout</span>
+                    <span className="font-medium">Logout</span>
                   </button>
                 </div>
               </div>

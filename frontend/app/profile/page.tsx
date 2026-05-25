@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
@@ -9,14 +9,14 @@ import Footer from '../components/Footer';
 import { useCartStore } from '../store/cartStore';
 import { useWishlistStore } from '../store/wishlistStore';
 import { authApi } from '../services/authApi';
-import { Order, Address } from '../services/types';
+import { Order, Address, User } from '../services/types';
 import { checkPasswordStrength, ValidationError } from '../utils/validation';
 import { toast } from "sonner";
 
 type TabType = 'overview' | 'orders' | 'wishlist' | 'addresses' | 'settings';
 
-export default function UserProfile() {
-  const { user, isAuthenticated, isHydrated } = useAuthStore();
+const UserProfile = () => {
+    const { user, isAuthenticated, isHydrated, updateUser } = useAuthStore();
   const router = useRouter();
   const cartStore = useCartStore();
   const cartItems = cartStore.items;
@@ -77,6 +77,9 @@ export default function UserProfile() {
   const [addressesLoading, setAddressesLoading] = useState(true);
   const [addressesError, setAddressesError] = useState<string | null>(null);
 
+  // Ref to ensure one-time initialization of form + secondary data
+  const hasInitializedRef = useRef(false);
+
   // Fetch orders
   const fetchOrders = async () => {
     setOrdersLoading(true);
@@ -122,7 +125,7 @@ export default function UserProfile() {
     }
   };
 
-  // Redirect if not authenticated
+// Auth protection - redirect if not logged in or not verified
   useEffect(() => {
     if (!isHydrated) return;
     if (!isAuthenticated || !user) {
@@ -133,16 +136,25 @@ export default function UserProfile() {
       router.push('/not-verified');
       return;
     }
-     // Initialize form data
-     setFormData({
-       fullName: user.fullName || '',
-       email: user.email || '',
-       phone: user.phone || '',
-     });
-    // Fetch orders and addresses
+  }, [isHydrated, isAuthenticated, user?.isVerified, router]);
+
+  // Seed initial form data and fetch secondary data ONLY ONCE when user first becomes available
+  useEffect(() => {
+    if (!user || hasInitializedRef.current) return;
+
+    hasInitializedRef.current = true;
+
+    // Initial seed of the edit form from the loaded user
+    setFormData({
+      fullName: user.fullName || '',
+      email: user.email || '',
+      phone: user.phone || '',
+    });
+
+    // One-time fetch of orders and addresses for the profile
     fetchOrders();
     fetchAddresses();
-  }, [isHydrated, isAuthenticated, user, router]);
+  }, [user]); // Only depends on user becoming truthy the first time
 
   if (!isHydrated) {
     return (
@@ -164,9 +176,31 @@ export default function UserProfile() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSaveProfile = () => {
-    // TODO: Implement API call to update profile
-    console.log('Save profile:', formData);
+  const handleSaveProfile = async () => {
+    try {
+      const response = await authApi.updateProfile(formData);
+      if (response.success && response.data) {
+        // The backend uses @WrapResponse() on this endpoint, so the actual user
+        // is nested under response.data.data. Fall back gracefully for safety.
+        const updatedUser = (response.data as any)?.data ?? response.data;
+        updateUser(updatedUser as User);
+        toast.success('Profile updated successfully');
+        setIsEditing(false);
+      } else {
+        toast.error(response.error || 'Failed to update profile');
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to update profile');
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setFormData({
+      fullName: user.fullName || '',
+      email: user.email || '',
+      phone: user.phone || '',
+    });
     setIsEditing(false);
   };
 
@@ -495,14 +529,22 @@ export default function UserProfile() {
                 <div>
                   <div className="flex items-center justify-between mb-6">
                     <h3 className="text-lg font-bold text-gray-900">Personal Information</h3>
-                    {!isEditing && (
-                      <button
-                        onClick={() => setIsEditing(true)}
-                        className="px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 border border-blue-600 rounded-lg hover:bg-blue-50 transition-colors"
-                      >
-                        Edit Profile
-                      </button>
-                    )}
+                     {!isEditing && (
+                       <button
+                         onClick={() => {
+                           // Always sync form with the latest user data when entering edit mode
+                           setFormData({
+                             fullName: user.fullName || '',
+                             email: user.email || '',
+                             phone: user.phone || '',
+                           });
+                           setIsEditing(true);
+                         }}
+                         className="px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 border border-blue-600 rounded-lg hover:bg-blue-50 transition-colors"
+                       >
+                         Edit Profile
+                       </button>
+                     )}
                   </div>
 
                    {isEditing ? (
@@ -539,20 +581,20 @@ export default function UserProfile() {
                             />
                           </div>
                        </div>
-                       <div className="flex gap-3">
-                         <button
-                           onClick={handleSaveProfile}
-                           className="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
-                         >
-                           Save Changes
-                         </button>
-                         <button
-                           onClick={() => setIsEditing(false)}
-                           className="px-6 py-2 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
-                         >
-                           Cancel
-                         </button>
-                       </div>
+<div className="flex gap-3">
+                          <button
+                            onClick={handleSaveProfile}
+                            className="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                          >
+                            Save Changes
+                          </button>
+                          <button
+                            onClick={handleCancelEdit}
+                            className="px-6 py-2 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
+                          >
+                            Cancel
+                          </button>
+                        </div>
                      </div>
                     ) : (
                       <div className="space-y-4">
@@ -1350,7 +1392,9 @@ export default function UserProfile() {
         </div>
       )}
 
-      <Footer />
-    </div>
-  );
-}
+       <Footer />
+     </div>
+   );
+ }
+
+export default UserProfile;

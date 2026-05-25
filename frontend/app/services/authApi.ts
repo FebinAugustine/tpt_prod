@@ -30,6 +30,9 @@ export const authApi = {
   getProfile: () =>
     api.get<User>('/auth/profile'),
 
+  updateProfile: (data: { fullName?: string; email?: string; phone?: string }) =>
+    api.put<User>('/auth/profile', data),
+
   addUser: (fullName: string, email: string, password: string, role: string) =>
     api.post('/auth/add-user', { fullName, email, password, role }),
 
@@ -126,11 +129,19 @@ export const authApi = {
     return handleResponse<any>(response);
   },
 
-  updateProduct: async (id: string, productData: any, images?: File[], removedImageIndices?: number[]) => {
+  updateProduct: async (id: string, productData: any, images?: File[], keptImageUrls?: string[]) => {
     const formData = new FormData();
     formData.append('product', JSON.stringify(productData));
     if (images && images.length > 0) images.forEach(img => formData.append('images', img));
-    if (removedImageIndices && removedImageIndices.length > 0) formData.append('removedImageIndices', JSON.stringify(removedImageIndices));
+
+    // Ensure we always have an array - if undefined, pass empty array
+    const urlsToSend = Array.isArray(keptImageUrls) ? keptImageUrls : [];
+    console.log('[authApi.updateProduct] urlsToSend:', urlsToSend, 'received keptImageUrls:', keptImageUrls);
+    console.log('[authApi.updateProduct] urlsToSend type:', typeof urlsToSend, 'isArray:', Array.isArray(urlsToSend));
+
+    // Send keptImageUrls - array of existing image URLs the client wants to keep
+    formData.append('keptImageUrls', JSON.stringify(urlsToSend));
+    console.log('[updateProduct] Sending keptImageUrls:', urlsToSend);
 
     const response = await fetch(`${API_BASE_URL}/products/${id}`, {
       method: 'PUT',
@@ -146,6 +157,35 @@ export const authApi = {
       if (refreshResponse.ok) {
         const retryResponse = await fetch(`${API_BASE_URL}/products/${id}`, {
           method: 'PUT',
+          credentials: 'include',
+          body: formData,
+        });
+        return handleResponse<any>(retryResponse);
+      }
+    }
+
+    return handleResponse<any>(response);
+  },
+
+  updateProductImages: async (id: string, images?: File[], keptImageUrls?: string[]) => {
+    const formData = new FormData();
+    if (images && images.length > 0) images.forEach(img => formData.append('images', img));
+    formData.append('keptImageUrls', JSON.stringify(keptImageUrls || []));
+
+    const response = await fetch(`${API_BASE_URL}/products/${id}/images`, {
+      method: 'PATCH',
+      credentials: 'include',
+      body: formData,
+    });
+
+    if (response.status === 401) {
+      const refreshResponse = await fetch(`${API_BASE_URL}/auth/refresh`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      if (refreshResponse.ok) {
+        const retryResponse = await fetch(`${API_BASE_URL}/products/${id}/images`, {
+          method: 'PATCH',
           credentials: 'include',
           body: formData,
         });
@@ -177,7 +217,7 @@ export const authApi = {
 
   // Banners
   getBanners: () =>
-    api.get<any>('/uimanager/banners'),
+    api.get<any>('/uimanager/banners', { cache: 'no-store' }),
 
   getBannerById: (id: string) =>
     api.get<any>(`/uimanager/banners/${id}`),
@@ -201,7 +241,7 @@ export const authApi = {
 
   // Offer Cards
   getOfferCards: () =>
-    api.get<any>('/uimanager/offer-cards'),
+    api.get<any>('/uimanager/offer-cards', { cache: 'no-store' }),
 
   getOfferCardById: (id: string) =>
     api.get<any>(`/uimanager/offer-cards/${id}`),
@@ -215,6 +255,35 @@ export const authApi = {
 
   deleteOfferCard: (id: string) =>
     api.delete(`/uimanager/offer-cards/${id}`),
+
+  updateOfferCard: async (id: string, cardData: any, image?: File) => {
+    const formData = new FormData();
+    formData.append('offerCard', JSON.stringify(cardData));
+    if (image) formData.append('image', image);
+    
+    const response = await fetch(`${API_BASE_URL}/uimanager/offer-cards/${id}`, {
+      method: 'PUT',
+      credentials: 'include',
+      body: formData,
+    });
+
+    if (response.status === 401) {
+      const refreshResponse = await fetch(`${API_BASE_URL}/auth/refresh`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      if (refreshResponse.ok) {
+        const retryResponse = await fetch(`${API_BASE_URL}/uimanager/offer-cards/${id}`, {
+          method: 'PUT',
+          credentials: 'include',
+          body: formData,
+        });
+        return handleResponse<any>(retryResponse);
+      }
+    }
+
+    return handleResponse<any>(response);
+  },
 
   // Careers
   getCareers: (active?: boolean) =>

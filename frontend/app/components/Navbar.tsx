@@ -19,6 +19,7 @@ export default function Navbar() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Calculate cart total items count
   const cartTotalItems = cartItems.reduce((total, item) => total + item.quantity, 0);
@@ -43,6 +44,12 @@ export default function Navbar() {
     setIsMobileMenuOpen(false);
   };
 
+  const performSearch = (query: string) => {
+    if (query.trim()) {
+      router.push(`/search?query=${encodeURIComponent(query.trim())}`);
+    }
+  };
+
   return (
     <nav className="bg-gray-900/95 backdrop-blur-lg border-b border-gray-700 sticky top-0 z-50">
       <div className="container mx-auto px-4">
@@ -64,11 +71,11 @@ export default function Navbar() {
 
           {/* Desktop Search Input - Only show when authenticated */}
           {isAuthenticated && (
-            <div className="hidden md:flex flex-1 max-w-md mx-8 relative">
-              <div className={`relative transition-all duration-300 ${isSearchFocused ? 'scale-105' : 'scale-100'}`}>
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <div className="hidden md:flex flex-1 max-w-md mx-8 px-3 py-2">
+              <div className="relative">
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                   <svg 
-                    className={`h-5 w-5 transition-colors ${isSearchFocused ? 'text-blue-400' : 'text-gray-400'}`}
+                    className="h-5 w-5 text-gray-400"
                     fill="none" 
                     stroke="currentColor" 
                     viewBox="0 0 24 24"
@@ -84,9 +91,18 @@ export default function Navbar() {
                 <input
                   type="text"
                   placeholder="Search products, recipes, or workouts..."
-                  className="block w-full pl-10 pr-3 py-2.5 bg-white/10 border border-white/20 rounded-full text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  value={searchQuery}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    setSearchQuery(e.target.value);
+                  }}
+                  onKeyPress={(e: React.KeyboardEvent<HTMLInputElement>) => {
+                    if (e.key === 'Enter') {
+                      performSearch(searchQuery);
+                    }
+                  }}
                   onFocus={() => setIsSearchFocused(true)}
                   onBlur={() => setIsSearchFocused(false)}
+                  className="block w-full pl-3 pr-10 py-2.5 bg-white/10 border border-white/20 rounded-full text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                 />
               </div>
             </div>
@@ -371,11 +387,20 @@ export default function Navbar() {
                            />
                          </svg>
                        </div>
-                       <input
-                         type="text"
-                         placeholder="Search products, recipes, or workouts..."
-                         className="block w-full pl-10 pr-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                       />
+                        <input
+                          type="text"
+                          placeholder="Search products, recipes, or workouts..."
+                          value={searchQuery}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                            setSearchQuery(e.target.value);
+                          }}
+                            onKeyPress={(e: React.KeyboardEvent<HTMLInputElement>) => {
+                              if (e.key === 'Enter') {
+                                performSearch(searchQuery);
+                              }
+                            }}
+                          className="block w-full pl-10 pr-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
                      </div>
                    </div>
                  )}

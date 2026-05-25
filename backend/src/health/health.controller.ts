@@ -22,17 +22,23 @@ export class HealthController {
     description: 'Returns application health status',
   })
   @ApiOkResponse({ description: 'Application is healthy' })
-  check() {
+check() {
     return this.health.check([
       () => this.mongooseHealth.pingCheck('database', { connection: this.connection }),
       async (): Promise<HealthIndicatorResult> => {
         try {
-          const redis = new Redis({
+          const redisConfig: any = {
             host: process.env.REDIS_HOST || 'localhost',
             port: parseInt(process.env.REDIS_PORT || '6379', 10),
-            password: process.env.REDIS_PASSWORD,
             connectTimeout: 3000,
-          });
+          };
+
+          const password = process.env.REDIS_PASSWORD;
+          if (password) {
+            redisConfig.password = password;
+          }
+
+          const redis = new Redis(redisConfig);
           await redis.ping();
           await redis.quit();
           return { redis: { status: 'up' } };

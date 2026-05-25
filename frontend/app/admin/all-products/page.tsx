@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuthStore } from "../../store/authStore";
 import { useRouter } from "next/navigation";
 import AdminNavbar from "../../components/AdminNavbar";
 import { authApi } from "../../services/authApi";
 import { motion } from "framer-motion";
-import { Trash2, Edit, X, Search, Filter } from "lucide-react";
+import { Trash2, Edit, Edit2, X, Search, Filter } from "lucide-react";
 import { toast } from "sonner";
 
 export default function AllProductsPage() {
@@ -62,15 +62,21 @@ function ProductsContent() {
   const [filteredProducts, setFilteredProducts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [categories, setCategories] = useState<any[]>([]);
-  const [editProductImages, setEditProductImages] = useState<File[]>([]);
-  const [editImagePreviews, setEditImagePreviews] = useState<string[]>([]);
-  const [removedImageIndices, setRemovedImageIndices] = useState<number[]>([]);
-  const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
-  const [editLoading, setEditLoading] = useState(false);
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [editModalOpen, setEditModalOpen] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
-  const [deleteProductId, setDeleteProductId] = useState<string | null>(null);
+  
+// Product edit state
+   const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
+   const [editLoading, setEditLoading] = useState(false);
+   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+   const [editModalOpen, setEditModalOpen] = useState(false);
+   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
+   const [deleteProductId, setDeleteProductId] = useState<string | null>(null);
+   
+   // Image edit state (separate from product edit)
+   const [imageEditModalOpen, setImageEditModalOpen] = useState(false);
+   const [imageEditPreview, setImageEditPreview] = useState<string[]>([]);
+   const [imageEditFiles, setImageEditFiles] = useState<File[]>([]);
+   const [imageEditLoading, setImageEditLoading] = useState(false);
+   const [selectedProductForImages, setSelectedProductForImages] = useState<any | null>(null);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
@@ -165,42 +171,6 @@ function ProductsContent() {
     setStockFilter("");
   };
 
-  const handleEditImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const files = Array.from(e.target.files);
-      const validFiles: File[] = [];
-      const newPreviews: string[] = [];
-
-      files.forEach((file) => {
-        if (editImagePreviews.length + validFiles.length < 8) {
-          if (file.size <= 5 * 1024 * 1024) {
-            validFiles.push(file);
-            const reader = new FileReader();
-            reader.onload = (event) => {
-              setEditImagePreviews((prev) => [...prev, event.target?.result as string]);
-            };
-            reader.readAsDataURL(file);
-         } else {
-           toast.error(`File ${file.name} is too large (max 5MB)`);
-         }
-        } else {
-          toast.error('Maximum 8 images allowed');
-        }
-      });
-
-      setEditProductImages((prev) => [...prev, ...validFiles]);
-    }
-  };
-
-  const removeEditImage = (index: number) => {
-    if (index >= selectedProduct.images.length) {
-      setEditProductImages((prev) => prev.filter((_, i) => i !== index - selectedProduct.images.length));
-    } else {
-      setRemovedImageIndices((prev) => [...prev, index]);
-    }
-    setEditImagePreviews((prev) => prev.filter((_, i) => i !== index));
-  };
-
   const handleDelete = async () => {
     if (!deleteProductId) return;
 
@@ -222,7 +192,6 @@ function ProductsContent() {
 
   const handleEditClick = (product: any) => {
     setSelectedProduct(product);
-    setRemovedImageIndices([]);
     setEditFormData({
       name: product.name || '',
       description: product.description || '',
@@ -245,8 +214,6 @@ function ProductsContent() {
       isPopular: product.isPopular || false,
       isRecommended: product.isRecommended || false,
     });
-    setEditImagePreviews(product.images || []);
-    setEditProductImages([]);
     setEditModalOpen(true);
   };
 
@@ -257,11 +224,12 @@ function ProductsContent() {
     setEditLoading(true);
     try {
       const response = await authApi.updateProduct(
-        selectedProduct._id, 
-        editFormData, 
-        editProductImages,
-        removedImageIndices
+        selectedProduct._id,
+        editFormData,
+        [], // No new images for product edit - use Edit Images button instead
+        []  // No kept images - images are managed separately now
       );
+
       if (response.success) {
         setProducts(products.map(product => 
           product._id === selectedProduct._id ? { 
@@ -271,9 +239,7 @@ function ProductsContent() {
           } : product
         ));
         setEditModalOpen(false);
-        setEditProductImages([]);
-        setEditImagePreviews([]);
-        setRemovedImageIndices([]);
+        fetchProducts();
       } else {
         toast.error(response.error || "Failed to update product");
       }
@@ -282,6 +248,94 @@ function ProductsContent() {
       toast.error("Failed to update product");
     } finally {
       setEditLoading(false);
+    }
+  };
+
+  // Image Edit handlers (separate from product edit)
+  const handleImageEditClick = (product: any) => {
+    setSelectedProductForImages(product);
+    const initialPreviews = Array.isArray(product.images) ? [...product.images] : [];
+    setImageEditPreview(initialPreviews);
+    setImageEditFiles([]);
+    setImageEditModalOpen(true);
+  };
+
+  const handleImageEditUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const files = Array.from(e.target.files).slice(0, 8 - imageEditPreview.length);
+      
+      files.forEach(file => {
+        if (file.size <= 5 * 1024 * 1024) {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const previewUrl = reader.result as string;
+            setImageEditPreview(prev => [...prev, previewUrl]);
+            setImageEditFiles(prev => [...prev, file]);
+          };
+          reader.readAsDataURL(file);
+        } else {
+          toast.error(`${file.name} is too large (max 5MB)`);
+        }
+      });
+    }
+  };
+
+  const handleImageEditRemove = (idx: number) => {
+    const previewToRemove = imageEditPreview[idx];
+    
+    // Check if it's an existing image (Cloudinary URL)
+    const isExistingImage = typeof previewToRemove === 'string' && 
+      (previewToRemove.startsWith('http://') || previewToRemove.startsWith('https://'));
+    
+    if (isExistingImage) {
+      // For existing images, just remove from preview - the keptImageUrls will not include it
+      setImageEditPreview(prev => prev.filter((_, i) => i !== idx));
+    } else {
+      // For new images, remove from both arrays
+      setImageEditPreview(prev => prev.filter((_, i) => i !== idx));
+      setImageEditFiles(prev => {
+        // Calculate which file index corresponds to this preview index
+        const fileIdx = idx - (imageEditPreview.length - imageEditFiles.length);
+        if (fileIdx >= 0) {
+          return prev.filter((_, i) => i !== fileIdx);
+        }
+        return prev;
+      });
+    }
+  };
+
+  const handleImageEditSubmit = async () => {
+    if (!selectedProductForImages) return;
+
+    // Filter to only server URLs (existing images) that are still in preview
+    const keptImageUrls = imageEditPreview.filter(url => 
+      typeof url === 'string' && (url.startsWith('http://') || url.startsWith('https://'))
+    );
+    
+    setImageEditLoading(true);
+    try {
+      const response = await authApi.updateProductImages(
+        selectedProductForImages._id,
+        imageEditFiles,
+        keptImageUrls
+      );
+
+      if (response.success) {
+        setProducts(products.map(product => 
+          product._id === selectedProductForImages._id 
+            ? { ...product, images: response.data?.images || [] }
+            : product
+        ));
+        setImageEditModalOpen(false);
+        fetchProducts();
+      } else {
+        toast.error(response.error || "Failed to update images");
+      }
+    } catch (error) {
+      console.error("Error updating images:", error);
+      toast.error("Failed to update images");
+    } finally {
+      setImageEditLoading(false);
     }
   };
 
@@ -481,10 +535,10 @@ function ProductsContent() {
                         <span className="text-yellow-400 font-semibold">{formatPrice(product.trainerPrice)}</span>
                       </div>
                     )}
-                  </div>
+</div>
                 </div>
                 
-                <div className="flex gap-3 pt-4 border-t border-white/10">
+                <div className="flex gap-2 pt-4 border-t border-white/10">
                   <button
                     onClick={() => {
                       setSelectedProduct(product);
@@ -492,7 +546,7 @@ function ProductsContent() {
                       setDeleteModalOpen(true);
                     }}
                     disabled={deleteLoading === product._id}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {deleteLoading === product._id ? (
                       <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-red-400"></div>
@@ -501,10 +555,18 @@ function ProductsContent() {
                     )}
                     Delete
                   </button>
-                
+                  
+                  <button
+                    onClick={() => handleImageEditClick(product)}
+                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 border border-purple-500/30 rounded-lg text-sm font-semibold transition-colors"
+                  >
+                    <Edit2 size={16} />
+                    Edit Images
+                  </button>
+
                   <button
                     onClick={() => handleEditClick(product)}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 border border-blue-500/30 rounded-lg text-sm font-semibold transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 border border-blue-500/30 rounded-lg text-sm font-semibold transition-colors"
                   >
                     <Edit size={16} />
                     Edit
@@ -752,113 +814,68 @@ function ProductsContent() {
                   </div>
                 </div>
 
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      id="isImported"
-                      checked={editFormData.isImported}
-                      onChange={(e) => setEditFormData({ ...editFormData, isImported: e.target.checked })}
-                      className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
-                    />
-                    <label htmlFor="isImported" className="ml-2 block text-sm text-gray-300">
-                      Imported
-                    </label>
-                  </div>
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      id="inStock"
-                      checked={editFormData.inStock}
-                      onChange={(e) => setEditFormData({ ...editFormData, inStock: e.target.checked })}
-                      className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
-                    />
-                    <label htmlFor="inStock" className="ml-2 block text-sm text-gray-300">
-                      In Stock
-                    </label>
-                  </div>
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      id="isActive"
-                      checked={editFormData.isActive}
-                      onChange={(e) => setEditFormData({ ...editFormData, isActive: e.target.checked })}
-                      className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
-                    />
-                    <label htmlFor="isActive" className="ml-2 block text-sm text-gray-300">
-                      Active
-                    </label>
-                  </div>
-                </div>
+<div className="flex items-center space-x-4">
+                   <div className="flex items-center">
+                     <input
+                       type="checkbox"
+                       id="isImported"
+                       checked={editFormData.isImported}
+                       onChange={(e) => setEditFormData({ ...editFormData, isImported: e.target.checked })}
+                       className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
+                     />
+                     <label htmlFor="isImported" className="ml-2 block text-sm text-gray-300">
+                       Imported
+                     </label>
+                   </div>
+                   <div className="flex items-center">
+                     <input
+                       type="checkbox"
+                       id="inStock"
+                       checked={editFormData.inStock}
+                       onChange={(e) => setEditFormData({ ...editFormData, inStock: e.target.checked })}
+                       className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
+                     />
+                     <label htmlFor="inStock" className="ml-2 block text-sm text-gray-300">
+                       In Stock
+                     </label>
+                   </div>
+                   <div className="flex items-center">
+                     <input
+                       type="checkbox"
+                       id="isActive"
+                       checked={editFormData.isActive}
+                       onChange={(e) => setEditFormData({ ...editFormData, isActive: e.target.checked })}
+                       className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
+                     />
+                     <label htmlFor="isActive" className="ml-2 block text-sm text-gray-300">
+                       Active
+                     </label>
+                   </div>
+                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-300">
-                    Images (Max 8, 5MB each)
-                  </label>
-                  <div className="grid grid-cols-4 gap-2 mb-2">
-                    {editImagePreviews.map((preview, index) => (
-                      <div key={index} className="relative">
-                        <img
-                          src={preview}
-                          alt={`Preview ${index + 1}`}
-                          className="w-full h-20 object-cover rounded-lg"
-                        />
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            e.preventDefault();
-                            removeEditImage(index);
-                          }}
-                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
-                    {editImagePreviews.length < 8 && (
-                      <label className="w-full h-20 border-2 border-dashed border-white/20 rounded-lg flex items-center justify-center cursor-pointer hover:border-red-500 transition-colors">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleEditImageChange}
-                          className="hidden"
-                          multiple
-                          disabled={editImagePreviews.length >= 8}
-                        />
-                        <svg className="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                      </label>
-                    )}
-                  </div>
-                  <p className="text-xs text-gray-400">
-                    {editImagePreviews.length}/8 images selected
-                  </p>
-                </div>
+                 <div className="flex justify-end space-x-3 pt-4">
+                   <button
+                     type="button"
+                     onClick={() => setEditModalOpen(false)}
+                     className="px-4 py-2 text-sm font-medium text-gray-300 bg-white/10 border border-white/20 rounded-md hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                   >
+                     Cancel
+                   </button>
+                   <button
+                     type="submit"
+                     disabled={editLoading}
+                     className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
+                   >
+                     {editLoading ? 'Updating...' : 'Update Product'}
+                   </button>
+                 </div>
+               </form>
+             </div>
+           </div>
+         </div>
+       )}
 
-                <div className="flex justify-end space-x-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={() => setEditModalOpen(false)}
-                    className="px-4 py-2 text-sm font-medium text-gray-300 bg-white/10 border border-white/20 rounded-md hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={editLoading}
-                    className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
-                  >
-                    {editLoading ? 'Updating...' : 'Update Product'}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {deleteModalOpen && selectedProduct && (
+       {deleteModalOpen && selectedProduct && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
           <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl shadow-xl w-full max-w-md">
             <div className="flex justify-between items-center p-6 border-b border-white/20">
@@ -893,10 +910,170 @@ function ProductsContent() {
                   {deleteLoading === selectedProduct._id ? 'Deleting...' : 'Delete Product'}
                 </button>
               </div>
+              </div>
             </div>
           </div>
-        </div>
-      )}
-    </div>
-  );
-}
+        )}
+
+       {imageEditModalOpen && selectedProductForImages && (
+         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50">
+           <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+             <div className="flex justify-between items-center p-6 border-b border-white/20 sticky top-0 bg-white/10 backdrop-blur-lg z-10">
+               <h3 className="text-lg font-semibold text-white">Edit Images - {selectedProductForImages?.name}</h3>
+               <button
+                 onClick={() => setImageEditModalOpen(false)}
+                 className="text-gray-400 hover:text-white"
+               >
+                 <X size={20} />
+               </button>
+             </div>
+             <div className="p-6">
+               <div>
+                 <label className="block text-sm font-medium text-gray-300 mb-2">
+                   Product Images (Max 8, 5MB each)
+                 </label>
+                 <div className="grid grid-cols-4 gap-2 mb-2">
+                   {imageEditPreview.map((preview, index) => (
+                     <div key={index} className="relative">
+                       <img
+                         src={preview}
+                         alt={`Preview ${index + 1}`}
+                         className="w-full h-20 object-cover rounded-lg"
+                       />
+                       <button
+                         onClick={(e) => {
+                           e.stopPropagation();
+                           e.preventDefault();
+                           handleImageEditRemove(index);
+                         }}
+                         className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
+                       >
+                         ×
+                       </button>
+                     </div>
+                   ))}
+                   {imageEditPreview.length < 8 && (
+                     <label className="w-full h-20 border-2 border-dashed border-white/20 rounded-lg flex items-center justify-center cursor-pointer hover:border-purple-500 transition-colors">
+                       <input
+                         type="file"
+                         accept="image/*"
+                         onChange={handleImageEditUpload}
+                         className="hidden"
+                         multiple
+                         disabled={imageEditPreview.length >= 8}
+                       />
+                       <svg className="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                       </svg>
+                     </label>
+                   )}
+                 </div>
+                 <p className="text-xs text-gray-400 mb-4">
+                   {imageEditPreview.length}/8 images selected
+                 </p>
+                 
+                 <div className="flex justify-end space-x-3 pt-4 border-t border-white/10">
+                   <button
+                     type="button"
+                     onClick={() => setImageEditModalOpen(false)}
+                     className="px-4 py-2 text-sm font-medium text-gray-300 bg-white/10 border border-white/20 rounded-md hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                   >
+                     Cancel
+                   </button>
+                   <button
+                     type="button"
+                     onClick={handleImageEditSubmit}
+                     disabled={imageEditLoading}
+                     className="px-4 py-2 text-sm font-medium text-white bg-purple-600 border border-transparent rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50"
+                   >
+                     {imageEditLoading ? 'Updating...' : 'Update Images'}
+                   </button>
+</div>
+               </div>
+             </div>
+           </div>
+         </div>
+       )}
+
+       {imageEditModalOpen && selectedProductForImages && (
+         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50">
+           <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+             <div className="flex justify-between items-center p-6 border-b border-white/20 sticky top-0 bg-white/10 backdrop-blur-lg z-10">
+               <h3 className="text-lg font-semibold text-white">Edit Images - {selectedProductForImages?.name}</h3>
+               <button
+                 onClick={() => setImageEditModalOpen(false)}
+                 className="text-gray-400 hover:text-white"
+               >
+                 <X size={20} />
+               </button>
+             </div>
+             <div className="p-6">
+               <div>
+                 <label className="block text-sm font-medium text-gray-300 mb-2">
+                   Product Images (Max 8, 5MB each)
+                 </label>
+                 <div className="grid grid-cols-4 gap-2 mb-2">
+                   {imageEditPreview.map((preview, index) => (
+                     <div key={index} className="relative">
+                       <img
+                         src={preview}
+                         alt={`Preview ${index + 1}`}
+                         className="w-full h-20 object-cover rounded-lg"
+                       />
+                       <button
+                         onClick={(e) => {
+                           e.stopPropagation();
+                           e.preventDefault();
+                           handleImageEditRemove(index);
+                         }}
+                         className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
+                       >
+                         ×
+                       </button>
+                     </div>
+                   ))}
+                   {imageEditPreview.length < 8 && (
+                     <label className="w-full h-20 border-2 border-dashed border-white/20 rounded-lg flex items-center justify-center cursor-pointer hover:border-purple-500 transition-colors">
+                       <input
+                         type="file"
+                         accept="image/*"
+                         onChange={handleImageEditUpload}
+                         className="hidden"
+                         multiple
+                         disabled={imageEditPreview.length >= 8}
+                       />
+                       <svg className="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                       </svg>
+                     </label>
+                   )}
+                 </div>
+                 <p className="text-xs text-gray-400 mb-4">
+                   {imageEditPreview.length}/8 images selected
+                 </p>
+                 
+                 <div className="flex justify-end space-x-3 pt-4 border-t border-white/10">
+                   <button
+                     type="button"
+                     onClick={() => setImageEditModalOpen(false)}
+                     className="px-4 py-2 text-sm font-medium text-gray-300 bg-white/10 border border-white/20 rounded-md hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                   >
+                     Cancel
+                   </button>
+                   <button
+                     type="button"
+                     onClick={handleImageEditSubmit}
+                     disabled={imageEditLoading}
+                     className="px-4 py-2 text-sm font-medium text-white bg-purple-600 border border-transparent rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50"
+                   >
+                     {imageEditLoading ? 'Updating...' : 'Update Images'}
+                   </button>
+                 </div>
+               </div>
+             </div>
+           </div>
+         </div>
+       )}
+     </div>
+   );
+ }
