@@ -55,32 +55,32 @@ export const useAuthStore = create<AuthState>()(
           }
         },
 
-       register: async (fullName: string, email: string, password: string, phone: string): Promise<boolean> => {
-         set({ isLoading: true, error: null });
- 
-         try {
-           const response = await authApi.register(fullName, email, password, phone);
- 
-           if (response.success) {
-             set({
-               isLoading: false,
-             });
-             return true;
-           } else {
-             set({
-               error: response.error || 'Registration failed',
-               isLoading: false,
-             });
-             return false;
-           }
-         } catch (error) {
-           set({
-             error: error instanceof Error ? error.message : 'An error occurred during registration',
-             isLoading: false,
-           });
-           return false;
-         }
-       },
+register: async (fullName: string, email: string, password: string, phone: string): Promise<boolean> => {
+          set({ isLoading: true, error: null });
+
+          try {
+            const response = await authApi.register(fullName, email, password, phone);
+
+            if (response.success) {
+              set({
+                isLoading: false,
+              });
+              return true;
+            } else {
+              set({
+                error: response.error || 'Registration failed',
+                isLoading: false,
+              });
+              return false;
+            }
+          } catch (error) {
+            set({
+              error: error instanceof Error ? error.message : 'An error occurred during registration',
+              isLoading: false,
+            });
+            return false;
+          }
+        },
 
        logout: () => {
          authApi.logout();

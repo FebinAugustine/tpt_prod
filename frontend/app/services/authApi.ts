@@ -18,8 +18,8 @@ export const authApi = {
   logout: () =>
     api.post('/auth/logout', undefined, { credentials: 'include' }),
 
-   register: (fullName: string, email: string, password: string, phone: string) =>
-     api.post<RegisterResponse>('/auth/register', { fullName, email, password, phone }),
+register: (fullName: string, email: string, password: string, phone: string) =>
+    api.post<RegisterResponse>('/auth/register', { fullName, email, password, phone }),
 
   forgotPassword: (email: string) =>
     api.post<ForgotPasswordResponse>('/auth/forgot-password', { email }),

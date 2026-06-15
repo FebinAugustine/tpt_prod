@@ -39,7 +39,7 @@ services:
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
       
-      # FIX 1: Activated production ACME validation (Removed Staging limits)
+      
       - "--certificatesresolvers.myresolver.acme.httpchallenge=true"
       - "--certificatesresolvers.myresolver.acme.httpchallenge.entrypoint=web"
       - "--certificatesresolvers.myresolver.acme.email=${LETSENCRYPT_EMAIL}"

@@ -71,31 +71,31 @@ export default function Register() {
     }
   };
 
-   const handleSubmit = async (e: React.FormEvent) => {
-     e.preventDefault();
-     
-     // Validate form
-     const validationErrors = validateRegisterForm(
-       formData.fullName,
-       formData.email,
-       formData.password,
-       formData.confirmPassword,
-       formData.phone
-     );
- 
-     if (validationErrors.length > 0) {
-       setErrors(validationErrors);
-       return;
-     }
- 
-     // Form is valid - handle registration logic here
-     const success = await register(formData.fullName, formData.email, formData.password, formData.phone);
-     
-     if (success) {
-       // Redirect to login or dashboard
-       router.push("/login");
-     }
-   };
+const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Validate form
+    const validationErrors = validateRegisterForm(
+      formData.fullName,
+      formData.email,
+      formData.password,
+      formData.confirmPassword,
+      formData.phone
+    );
+
+    if (validationErrors.length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+
+    // Form is valid - handle registration logic here
+    const success = await register(formData.fullName, formData.email, formData.password, formData.phone);
+
+    if (success) {
+      // Redirect to login or dashboard
+      router.push("/login");
+    }
+  };
 
   const getFieldError = (fieldName: string): string | null => {
     const error = errors.find((err) => err.field === fieldName);
@@ -347,10 +347,36 @@ export default function Register() {
                   )}
                 </button>
               </div>
-              {getFieldError("confirmPassword") && (
+{getFieldError("confirmPassword") && (
+                 <p className="text-sm text-red-400 flex items-center gap-1">
+                   <span className="text-lg">⚠️</span>
+                   {getFieldError("confirmPassword")}
+                 </p>
+               )}
+              </div>
+
+            {/* Phone Input */}
+            <div className="space-y-2">
+              <label htmlFor="phone" className="block text-sm font-medium text-white">
+                Phone Number
+              </label>
+              <input
+                type="tel"
+                id="phone"
+                name="phone"
+                value={formData.phone}
+                onChange={handleInputChange}
+                placeholder="+1234567890"
+                className={`w-full px-4 py-3 rounded-xl bg-white/10 border backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  getFieldError("phone")
+                    ? "border-red-500 focus:border-red-500"
+                    : "border-white/20 focus:border-blue-500"
+                }`}
+              />
+              {getFieldError("phone") && (
                 <p className="text-sm text-red-400 flex items-center gap-1">
                   <span className="text-lg">⚠️</span>
-                  {getFieldError("confirmPassword")}
+                  {getFieldError("phone")}
                 </p>
               )}
             </div>

@@ -31,7 +31,6 @@ export class RegisterDto {
   password: string;
 
   @IsString()
-  @IsNotEmpty()
   @MaxLength(20)
   phone: string;
 }

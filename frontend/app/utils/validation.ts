@@ -100,19 +100,17 @@ export const validateConfirmPassword = (password: string, confirmPassword: strin
 
 // Validate phone number
 export const validatePhone = (phone: string): ValidationError | null => {
-  const sanitized = sanitizeInput(phone);
-  
-  if (!sanitized.trim()) {
+  if (!phone || !phone.trim()) {
     return { field: 'phone', message: 'Phone number is required' };
   }
   
-  // Phone regex pattern (allowing international format)
-  const phoneRegex = /^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/im;
-  if (!phoneRegex.test(sanitized)) {
+  // Basic phone validation - just check if it contains mainly digits and common formatting chars
+  const phoneRegex = /^[+\d][\d\s\-().]{7,18}$/;
+  if (!phoneRegex.test(phone.trim())) {
     return { field: 'phone', message: 'Please enter a valid phone number' };
   }
   
-  if (sanitized.length > 20) {
+  if (phone.length > 20) {
     return { field: 'phone', message: 'Phone number must be less than 20 characters' };
   }
   
