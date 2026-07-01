@@ -27,6 +27,7 @@ export default function BannerSlider({ className = "" }: BannerSliderProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [bannerVersion, setBannerVersion] = useState(0);
 
   // Fetch banners from API
   const fetchBanners = useCallback(async () => {
@@ -35,6 +36,7 @@ export default function BannerSlider({ className = "" }: BannerSliderProps) {
     try {
       const response = await authApi.getBanners();
       if (response.success && response.data) {
+        setBannerVersion(v => v + 1);
         // Filter only active banners and sort by sortOrder
         const activeBanners = response.data
           .filter((banner: Banner) => banner.isActive)
@@ -54,6 +56,15 @@ export default function BannerSlider({ className = "" }: BannerSliderProps) {
   // Auto-rotate banner every 5 seconds
   useEffect(() => {
     fetchBanners();
+  }, [fetchBanners]);
+
+  // Refetch banners when user returns to the tab
+  useEffect(() => {
+    const handleFocus = () => {
+      fetchBanners();
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
   }, [fetchBanners]);
 
   // Auto-rotation timer
@@ -151,12 +162,14 @@ export default function BannerSlider({ className = "" }: BannerSliderProps) {
       <div className={`w-full ${className}`}>
         <div className="relative w-full h-40 md:h-56 lg:h-72 rounded-2xl overflow-hidden">
           <img
-            src={banner.image}
+            src={banner.image + '?v=' + bannerVersion}
             alt={banner.title}
             className="w-full h-full object-cover"
           />
           {/* Gradient overlay */}
           <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/20 to-transparent" />
+          {/* Darker overlay for mobile readability */}
+          <div className="absolute inset-0 bg-black/30 md:hidden" />
           
           {/* Content */}
           <div className="absolute bottom-0 left-0 right-0 p-4 md:p-6">
@@ -202,12 +215,14 @@ export default function BannerSlider({ className = "" }: BannerSliderProps) {
             className="absolute inset-0"
           >
             <img
-              src={banners[currentIndex].image}
+              src={banners[currentIndex].image + '?v=' + bannerVersion}
               alt={banners[currentIndex].title}
               className="w-full h-full object-cover"
             />
             {/* Gradient overlay */}
             <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/20 to-transparent" />
+            {/* Darker overlay for mobile readability */}
+            <div className="absolute inset-0 bg-black/30 md:hidden" />
             
             {/* Content */}
             <div className="absolute bottom-0 left-0 right-0 p-4 md:p-6">

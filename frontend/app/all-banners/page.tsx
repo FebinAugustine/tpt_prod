@@ -91,9 +91,19 @@ function BannersContent() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<{ type: 'banner' | 'offerCard'; id: string; title: string } | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [bannerVersion, setBannerVersion] = useState(0);
+  const [offerCardVersion, setOfferCardVersion] = useState(0);
 
   useEffect(() => {
     fetchData();
+  }, []);
+
+  useEffect(() => {
+    const handleFocus = () => {
+      fetchData();
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
   }, []);
 
   const fetchData = async () => {
@@ -105,9 +115,11 @@ function BannersContent() {
       ]);
 
       if (bannersResponse.success && bannersResponse.data) {
+        setBannerVersion(v => v + 1);
         setBanners(bannersResponse.data);
       }
       if (offerCardsResponse.success && offerCardsResponse.data) {
+        setOfferCardVersion(v => v + 1);
         setOfferCards(offerCardsResponse.data);
       }
     } catch (error) {
@@ -224,7 +236,7 @@ function BannersContent() {
                     >
                       <div className="relative h-48">
                         <img
-                          src={banner.image}
+                          src={banner.image + '?v=' + bannerVersion}
                           alt={banner.title}
                           className="w-full h-full object-cover"
                         />
@@ -279,7 +291,7 @@ function BannersContent() {
                     >
                       <div className="relative h-24">
                         <img
-                          src={card.image}
+                          src={card.image + '?v=' + offerCardVersion}
                           alt={card.title}
                           className="w-full h-full object-contain bg-white/5"
                         />

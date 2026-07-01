@@ -37,7 +37,7 @@ export class TokenService {
   async generateAccessToken(payload: any): Promise<string> {
     return this.jwtService.sign(payload, {
       secret: this.jwtSecret,
-      expiresIn: '15m',
+      expiresIn: '3d',
     });
   }
 
@@ -47,7 +47,7 @@ export class TokenService {
       { ...payload, jti: tokenId },
       {
         secret: this.jwtRefreshSecret,
-        expiresIn: '7d',
+        expiresIn: '27d',
       },
     );
   }

@@ -3,6 +3,7 @@ import {
   ConflictException,
   NotFoundException,
   InternalServerErrorException,
+  Inject,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -13,6 +14,8 @@ import { AddOfferCardDto } from './dto/add-offer-card.dto';
 import { ConfigService } from '@nestjs/config';
 import * as cloudinary from 'cloudinary';
 import { UploadApiResponse, UploadApiErrorResponse } from 'cloudinary';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 
 @Injectable()
 export class UIManagerService {
@@ -21,6 +24,7 @@ export class UIManagerService {
     @InjectModel(OfferCard.name)
     private offerCardModel: Model<OfferCardDocument>,
     private configService: ConfigService,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {
     // Configure Cloudinary
     cloudinary.v2.config({
@@ -135,6 +139,8 @@ export class UIManagerService {
       throw new NotFoundException('Banner not found');
     }
 
+    await this.cacheManager.del('banners-all');
+
     return updatedBanner;
   }
 
@@ -149,6 +155,8 @@ export class UIManagerService {
     if (banner.image) {
       // This would require extracting public ID from Cloudinary URL
     }
+
+    await this.cacheManager.del('banners-all');
 
     return { message: 'Banner deleted successfully' };
   }
@@ -265,6 +273,8 @@ export class UIManagerService {
       throw new NotFoundException('Offer card not found');
     }
 
+    await this.cacheManager.del('offercards-all');
+
     return updatedOfferCard;
   }
 
@@ -274,6 +284,8 @@ export class UIManagerService {
     if (!offerCard) {
       throw new NotFoundException('Offer card not found');
     }
+
+    await this.cacheManager.del('offercards-all');
 
     return { message: 'Offer card deleted successfully' };
   }

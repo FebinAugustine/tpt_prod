@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { BackupService } from './backup.service';
-import { ExportFormat, ExportType } from './dto/export-data.dto';
+import { DateRange, ExportFormat, ExportType } from './dto/export-data.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -24,10 +24,11 @@ export class BackupController {
     @Query('format') format: ExportFormat,
     @Query('type') type: ExportType,
     @Res() res: Response,
+    @Query('dateRange') dateRange?: DateRange,
   ) {
     try {
       const { buffer, contentType, filename } =
-        await this.backupService.exportToFormat(type, format);
+        await this.backupService.exportToFormat(type, format, dateRange);
 
       res.set({
         'Content-Type': contentType,
@@ -47,11 +48,16 @@ export class BackupController {
   }
 
   @Get('preview')
-  async previewData(@Query('type') type: ExportType, @Res() res: Response) {
+  async previewData(
+    @Query('type') type: ExportType,
+    @Res() res: Response,
+    @Query('dateRange') dateRange?: DateRange,
+  ) {
     try {
       const { data, filename } = await this.backupService.exportData(
         type,
         ExportFormat.JSON,
+        dateRange,
       );
 
       res.status(HttpStatus.OK).json({

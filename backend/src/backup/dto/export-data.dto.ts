@@ -14,6 +14,14 @@ export enum ExportType {
   ALL = 'all',
 }
 
+export enum DateRange {
+  ALL = 'all',
+  LAST_WEEK = 'last_week',
+  LAST_MONTH = 'last_month',
+  LAST_3_MONTHS = 'last_3_months',
+  LAST_6_MONTHS = 'last_6_months',
+}
+
 export class ExportDataDto {
   @IsEnum(ExportFormat)
   format: ExportFormat;
@@ -24,4 +32,8 @@ export class ExportDataDto {
   @IsOptional()
   @IsEnum(ExportFormat)
   formatOverride?: ExportFormat;
+
+  @IsOptional()
+  @IsEnum(DateRange)
+  dateRange?: DateRange;
 }

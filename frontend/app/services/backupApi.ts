@@ -3,6 +3,14 @@ import { API_BASE_URL } from './types';
 
 export type ExportFormat = 'json' | 'excel' | 'pdf';
 export type ExportType = 'users' | 'products' | 'orders' | 'categories' | 'all';
+export type DateRangeOption = 'all' | 'last_week' | 'last_month' | 'last_3_months' | 'last_6_months';
+
+export interface ExportSingleResponse {
+  success: boolean;
+  blob?: Blob;
+  filename?: string;
+  error?: string;
+}
 
 export interface ExportResponse {
   success: boolean;
@@ -13,13 +21,28 @@ export interface ExportResponse {
   error?: string;
 }
 
+export interface ExportSingleResponse {
+  success: boolean;
+  blob?: Blob;
+  filename?: string;
+  error?: string;
+}
+
+export interface ExportAllResponse {
+  success: boolean;
+  files?: { blob: Blob; filename: string }[];
+  error?: string;
+}
+
 export const backupApi = {
   exportData: async (
     format: ExportFormat,
     type: ExportType,
-  ): Promise<{ success: boolean; blob?: Blob; filename?: string; error?: string }> => {
+    dateRange?: DateRangeOption,
+  ): Promise<ExportSingleResponse> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/backup/export?format=${format}&type=${type}`, {
+      const dateParam = dateRange && dateRange !== 'all' ? `&dateRange=${dateRange}` : '';
+      const response = await fetch(`${API_BASE_URL}/backup/export?format=${format}&type=${type}${dateParam}`, {
         method: 'GET',
         credentials: 'include',
       });
@@ -42,6 +65,33 @@ export const backupApi = {
         : `${type}.${formatExtension[format]}`;
 
       return { success: true, blob, filename };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Network error',
+      };
+    }
+  },
+
+  exportAllData: async (
+    format: ExportFormat,
+    dateRange?: DateRangeOption,
+  ): Promise<ExportAllResponse> => {
+    const types: ExportType[] = ['users', 'products', 'categories', 'orders'];
+    try {
+      const results = await Promise.all(
+        types.map((type) => backupApi.exportData(format, type, dateRange)),
+      );
+
+      const files = results
+        .filter((r) => r.success && r.blob && r.filename)
+        .map((r) => ({ blob: r.blob!, filename: r.filename! }));
+
+      if (files.length === 0) {
+        return { success: false, error: 'No files were generated' };
+      }
+
+      return { success: true, files };
     } catch (error) {
       return {
         success: false,

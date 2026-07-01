@@ -320,8 +320,10 @@ register: (fullName: string, email: string, password: string, phone: string) =>
 
   setUpiSettings: (data: any, file?: File) => {
     const formData = new FormData();
-    formData.append('settings', JSON.stringify(data));
-    if (file) formData.append('qrCode', file);
+    formData.append('upiId', data.upiId || '');
+    formData.append('merchantName', data.merchantName || '');
+    if (data.qrCodeUrl) formData.append('qrCodeUrl', data.qrCodeUrl);
+    if (file) formData.append('qrCodeImage', file);
     return fetchWithAuth(`${API_BASE_URL}/settings/upi`, { method: 'PUT', body: formData });
   },
 };

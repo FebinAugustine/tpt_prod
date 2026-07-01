@@ -76,6 +76,7 @@ function BannersContent() {
   });
   const [editImage, setEditImage] = useState<File | null>(null);
   const [editImagePreview, setEditImagePreview] = useState<string>('');
+  const [bannerVersion, setBannerVersion] = useState(0);
 
   useEffect(() => {
     fetchBanners();
@@ -97,25 +98,26 @@ function BannersContent() {
      }
    };
 
-  const handleDelete = async () => {
-    if (!selectedBanner) return;
+   const handleDelete = async () => {
+     if (!selectedBanner) return;
 
-    try {
-      setDeleteLoading(true);
-      const response = await authApi.deleteBanner(selectedBanner._id);
-      if (response.success) {
-        setBanners(banners.filter(b => b._id !== selectedBanner._id));
-        toast.success("Banner deleted successfully");
-      } else {
-        toast.error(response.error || "Failed to delete banner");
-      }
-    } catch (error) {
-      console.error("Error deleting banner:", error);
-      toast.error("Failed to delete banner");
-    } finally {
-      setDeleteLoading(false);
-    }
-  };
+     try {
+       setDeleteLoading(true);
+       const response = await authApi.deleteBanner(selectedBanner._id);
+       if (response.success) {
+         setBanners(banners.filter(b => b._id !== selectedBanner._id));
+         toast.success("Banner deleted successfully");
+       } else {
+         toast.error(response.error || "Failed to delete banner");
+       }
+     } catch (error) {
+       console.error("Error deleting banner:", error);
+       toast.error("Failed to delete banner");
+     } finally {
+       setDeleteLoading(false);
+       setDeleteModalOpen(false);
+     }
+   };
 
   const handleEditClick = (banner: any) => {
     setSelectedBanner(banner);
@@ -149,12 +151,20 @@ function BannersContent() {
     try {
       const response = await authApi.updateBanner(selectedBanner._id, editFormData, editImage || undefined);
       if (response.success) {
-        // Update the banner in place immediately
-        setBanners(banners.map(b => b._id === selectedBanner._id ? { ...b, ...editFormData, image: (response.data as any)?.image || b.image } : b));
+        await fetchBanners();
+        setBannerVersion(v => v + 1);
         toast.success("Banner updated successfully");
         setEditModalOpen(false);
         setEditImage(null);
-        fetchBanners(); // Fetch to get any other changes
+        setEditImagePreview('');
+        setEditFormData({
+          title: '',
+          subtitle: '',
+          buttonText: '',
+          buttonLink: '',
+          isActive: true,
+          sortOrder: 0,
+        });
       } else {
         toast.error(response.error || "Failed to update banner");
       }
@@ -203,7 +213,7 @@ function BannersContent() {
                 {banner.image && (
                   <div className="mb-4 rounded-lg overflow-hidden">
                     <img
-                      src={banner.image}
+                      src={banner.image + '?v=' + bannerVersion}
                       alt={banner.title}
                       className="w-full h-40 object-cover"
                     />
@@ -305,7 +315,7 @@ function BannersContent() {
                 {editImagePreview && (
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-1">Current Image</label>
-                    <img src={editImagePreview} alt="Preview" className="w-full h-40 object-cover rounded-lg mb-2" />
+                    <img src={editImagePreview + '?v=' + bannerVersion} alt="Preview" className="w-full h-40 object-cover rounded-lg mb-2" />
                   </div>
                 )}
                 

@@ -381,6 +381,9 @@ export class AuthService {
     if (updateData.password !== undefined) {
       user.password = await bcrypt.hash(updateData.password, 12);
     }
+    if (updateData.isVerified !== undefined) {
+      user.isVerified = updateData.isVerified;
+    }
 
     await user.save();
 

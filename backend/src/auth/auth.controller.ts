@@ -74,7 +74,7 @@ export class AuthController {
       httpOnly: true,
       secure: isProduction,
       sameSite: 'strict' as const,
-      maxAge: 15 * 60 * 1000, // 15 minutes for access token
+      maxAge: 3 * 24 * 60 * 60 * 1000, // 3 days for access token
       path: '/',
     };
 
@@ -82,7 +82,7 @@ export class AuthController {
       httpOnly: true,
       secure: isProduction,
       sameSite: 'strict' as const,
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days for refresh token
+      maxAge: 27 * 24 * 60 * 60 * 1000, // 27 days for refresh token
       path: '/',
     };
 
@@ -157,34 +157,63 @@ export class AuthController {
 
     if (!refreshToken) {
       res.clearCookie('accessToken', { path: '/' });
+      res.clearCookie('refreshToken', { path: '/' });
       return { success: false, error: 'No refresh token found' };
     }
 
     try {
       const decoded = await this.authService.verifyRefreshToken(refreshToken);
-      const newAccessToken = await this.authService.generateAccessToken({
-        sub: decoded.sub,
-        email: decoded.email,
-        role: decoded.role,
-      });
+      const userId = decoded.sub;
+      const oldTokenId = decoded.jti;
+
+      const user = await this.authService.getUserById(userId);
+      if (!user) {
+        res.clearCookie('accessToken', { path: '/' });
+        res.clearCookie('refreshToken', { path: '/' });
+        return { success: false, error: 'Invalid refresh token' };
+      }
+
+      if (oldTokenId) {
+        await this.authService.invalidateRefreshToken(userId, oldTokenId);
+      }
+
+      const payload = { sub: decoded.sub, email: decoded.email, role: decoded.role };
+      const newAccessToken = await this.authService.generateAccessToken(payload);
+      const newRefreshToken = await this.authService.generateRefreshToken(payload);
+
+      const newDecoded = await this.authService.verifyRefreshToken(newRefreshToken);
+      const newTokenId = newDecoded?.jti;
+
+      if (newTokenId) {
+        await this.authService.addRefreshToken(userId, newTokenId);
+      }
 
       const isProduction = process.env.NODE_ENV === 'production';
-      const cookieOptions = {
+      const accessCookieOptions = {
         httpOnly: true,
         secure: isProduction,
         sameSite: 'strict' as const,
-        maxAge: 15 * 60 * 1000,
+        maxAge: 3 * 24 * 60 * 60 * 1000,
         path: '/',
       };
 
-      res.cookie('accessToken', newAccessToken, cookieOptions);
+      const refreshCookieOptions = {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: 'strict' as const,
+        maxAge: 27 * 24 * 60 * 60 * 1000,
+        path: '/',
+      };
+
+      res.cookie('accessToken', newAccessToken, accessCookieOptions);
+      res.cookie('refreshToken', newRefreshToken, refreshCookieOptions);
       return { success: true, message: 'Token refreshed' };
     } catch {
       res.clearCookie('accessToken', { path: '/' });
       res.clearCookie('refreshToken', { path: '/' });
       return { success: false, error: 'Invalid refresh token' };
     }
-}
+  }
 
   @Get('profile')
   @UseGuards(JwtAuthGuard)

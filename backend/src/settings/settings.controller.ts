@@ -1,7 +1,7 @@
 import {
   Controller,
   Get,
-  Post,
+  Put,
   Body,
   UseGuards,
   UseInterceptors,
@@ -51,7 +51,7 @@ export class SettingsController {
     return settings;
   }
 
-  @Post('upi')
+  @Put('upi')
   @UseGuards(JwtAuthGuard, AdminGuard)
   @AdminOnly()
   @ApiBearerAuth()
