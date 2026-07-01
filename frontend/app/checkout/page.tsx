@@ -9,7 +9,7 @@ import { authApi } from "../services/authApi";
 import { toast } from "sonner";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-import QRCode from 'qrcode';
+import { QRCodeCanvas } from 'qrcode.react';
 
 interface SavedAddress {
   _id: string;
@@ -60,7 +60,6 @@ export default function CheckoutPage() {
     transactionId: '',
     referenceNo: '',
   });
-  const [dynamicQrUrl, setDynamicQrUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isUpiLoading, setIsUpiLoading] = useState(true);
   const [showAddressForm, setShowAddressForm] = useState(false);
@@ -122,24 +121,6 @@ export default function CheckoutPage() {
 
     fetchData();
   }, []);
-
-  useEffect(() => {
-    const generateQr = async () => {
-      if (upiSettings?.upiId && totalPrice > 0) {
-        try {
-          const qrData = `upi://pay?pa=${encodeURIComponent(upiSettings.upiId)}&pn=${encodeURIComponent(upiSettings.merchantName || 'Merchant')}&am=${totalPrice.toFixed(2)}&cu=INR`;
-          const url = await QRCode.toDataURL(qrData, { width: 200, margin: 1 });
-          setDynamicQrUrl(url);
-        } catch (err) {
-          console.error('Failed to generate QR code:', err);
-          setDynamicQrUrl(null);
-        }
-      } else {
-        setDynamicQrUrl(null);
-      }
-    };
-    generateQr();
-  }, [upiSettings, totalPrice]);
 
   const handleSelectAddress = (address: SavedAddress) => {
     setSelectedAddressId(address._id);
@@ -499,8 +480,12 @@ export default function CheckoutPage() {
                         <div className="text-center">
                           <p className="text-sm text-gray-600 mb-2">Scan QR Code to Pay</p>
                           <div className="w-48 h-48 mx-auto bg-white rounded-lg border-2 border-gray-200 flex items-center justify-center overflow-hidden">
-                            {dynamicQrUrl ? (
-                              <img src={dynamicQrUrl} alt="UPI QR Code" className="w-full h-full object-contain" />
+                            {upiSettings?.upiId && totalPrice > 0 ? (
+                              <QRCodeCanvas
+                                value={`upi://pay?pa=${encodeURIComponent(upiSettings.upiId)}&pn=${encodeURIComponent(upiSettings.merchantName || 'Merchant')}&am=${totalPrice.toFixed(2)}&cu=INR`}
+                                size={200}
+                                marginSize={1}
+                              />
                             ) : (
                               <div className="text-center p-4">
                                 <p className="text-xs text-gray-500">UPI ID: {upiSettings.upiId}</p>
