@@ -130,11 +130,11 @@ const faqCategories = [
       },
       {
         q: "How can I contact customer support?",
-        a: "You can reach us via email at support@thepowertrainer.com, call us at +91 98765 43210 (Mon-Sat, 9AM-6PM), or use the live chat on our website."
+        a: "You can reach us via email at supporttpt@gmail.com, call us at +91 9544946511 (Mon-Sat, 9AM-6PM), or use the live chat on our website."
       },
       {
         q: "Do you offer bulk or wholesale orders?",
-        a: "Yes, we offer special pricing for bulk orders. Please contact our business team at bulk@thepowertrainer.com for inquiries."
+        a: "Yes, we offer special pricing for bulk orders. Please contact our business team at supporttpt@gmail.com for inquiries."
       },
     ],
   },
@@ -193,13 +193,13 @@ export default function FAQPage() {
             </p>
             <div className="flex flex-wrap gap-3">
               <a
-                href="mailto:support@thepowertrainer.com"
+                href="mailto:supporttpt@gmail.com"
                 className="px-4 py-2 bg-white text-blue-600 rounded-lg font-medium hover:bg-blue-50 transition-colors"
               >
                 Email Support
               </a>
               <a
-                href="tel:+919876543210"
+                href="tel:+919544946511"
                 className="px-4 py-2 bg-blue-700 text-white rounded-lg font-medium hover:bg-blue-800 transition-colors"
               >
                 Call Us

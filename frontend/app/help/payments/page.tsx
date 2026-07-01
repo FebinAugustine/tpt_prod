@@ -138,8 +138,8 @@ export default function PaymentsPage() {
                 For payment-related queries, contact us:
               </p>
               <ul className="list-none pl-6 space-y-2 mt-2">
-                <li><strong>Email:</strong> support@thepowertrainer.com</li>
-                <li><strong>Phone:</strong> +91 98765 43210</li>
+                <li><strong>Email:</strong> supporttpt@gmail.com</li>
+                <li><strong>Phone:</strong> +91 9544946511</li>
                 <li><strong>Hours:</strong> Mon-Sat, 9AM-6PM</li>
               </ul>
             </section>

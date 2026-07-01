@@ -110,13 +110,13 @@ export default function SitemapPage() {
             </p>
             <div className="flex flex-wrap gap-3 text-sm">
               <a
-                href="mailto:support@thepowertrainer.com"
+                href="mailto:supporttpt@gmail.com"
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
                 Email Support
               </a>
               <a
-                href="tel:+919876543210"
+                href="tel:+919544946511"
                 className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
               >
                 Call Us

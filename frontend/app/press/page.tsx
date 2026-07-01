@@ -145,8 +145,8 @@ export default async function PressPage() {
               <div className="p-6 bg-gray-50 rounded-xl border border-gray-200">
                 <h3 className="font-semibold text-gray-900 mb-2">Press Office</h3>
                 <ul className="list-none space-y-2 text-gray-600">
-                  <li><strong>Email:</strong> press@thepowertrainer.com</li>
-                  <li><strong>Phone:</strong> +91 98765 43210</li>
+                  <li><strong>Email:</strong> supporttpt@gmail.com</li>
+                  <li><strong>Phone:</strong> +91 9544946511</li>
                   <li><strong>Hours:</strong> Mon-Fri, 10AM-5PM</li>
                 </ul>
               </div>

@@ -153,8 +153,8 @@ export default function Footer() {
             <div className="col-span-2 md:col-span-4 lg:col-span-1">
               <h3 className="text-white font-semibold mb-4 text-sm">Contact Us</h3>
               <div className="space-y-2 text-xs text-gray-400">
-                <p>Email: support@thepowertrainer.com</p>
-                <p>Phone: +91 98765 43210</p>
+                <p>Email: supporttpt@gmail.com</p>
+                <p>Phone: +91 9544946511</p>
                 <p>Hours: Mon-Sat, 9AM-6PM</p>
               </div>
               {/* Social Icons */}

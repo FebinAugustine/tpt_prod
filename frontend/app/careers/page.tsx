@@ -122,7 +122,7 @@ export default async function CareersPage() {
                   Interested in joining The Power Trainer? Send us your resume and we&apos;ll get in touch!
                 </p>
                 <a
-                  href="mailto:careers@thepowertrainer.com"
+                  href="mailto:supporttpt@gmail.com"
                   className="inline-block px-6 py-3 bg-white text-blue-600 font-semibold rounded-lg hover:bg-blue-50 transition-colors"
                 >
                   Send Your Resume
@@ -135,8 +135,8 @@ export default async function CareersPage() {
                 Contact HR
               </h2>
               <ul className="list-none pl-6 space-y-2 text-gray-600">
-                <li><strong>Email:</strong> careers@thepowertrainer.com</li>
-                <li><strong>Phone:</strong> +91 98765 43210</li>
+                <li><strong>Email:</strong> supporttpt@gmail.com</li>
+                <li><strong>Phone:</strong> +91 9544946511</li>
                 <li><strong>Hours:</strong> Mon-Sat, 9AM-6PM</li>
               </ul>
             </section>
