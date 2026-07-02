@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import ClientLayout from "./ClientLayout";
+import RegisterSW from "./pwa-registration";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -12,11 +13,6 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
-
-export const metadata: Metadata = {
-  title: "Protein App - Your Ultimate Fitness Companion",
-  description: "Track your protein intake, analyze nutrition, and manage fitness goals with the Protein App",
-};
 
 export default function RootLayout({
   children,
@@ -29,7 +25,31 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ClientLayout>{children}</ClientLayout>
+        <RegisterSW />
       </body>
     </html>
   );
 }
+
+export const viewport = {
+  themeColor: "#dc2626",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
+
+export const metadata: Metadata = {
+  title: "The Power Trainer - Premium Protein Supplements",
+  description: "Your Ultimate Fitness Companion - Premium protein supplements and fitness products",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "The Power Trainer",
+  },
+  icons: {
+    icon: [{ url: "/icons/icon-192x192.png", sizes: "192x192", type: "image/png" }],
+    apple: [{ url: "/icons/icon-192x192.png", sizes: "192x192", type: "image/png" }],
+  },
+};

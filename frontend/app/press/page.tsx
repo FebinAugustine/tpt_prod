@@ -146,7 +146,7 @@ export default async function PressPage() {
                 <h3 className="font-semibold text-gray-900 mb-2">Press Office</h3>
                 <ul className="list-none space-y-2 text-gray-600">
                   <li><strong>Email:</strong> supporttpt@gmail.com</li>
-                  <li><strong>Phone:</strong> +91 9544946511</li>
+                  <li><strong>Phone:</strong> +91 9447540035</li>
                   <li><strong>Hours:</strong> Mon-Fri, 10AM-5PM</li>
                 </ul>
               </div>

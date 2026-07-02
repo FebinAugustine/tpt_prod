@@ -130,7 +130,7 @@ const faqCategories = [
       },
       {
         q: "How can I contact customer support?",
-        a: "You can reach us via email at supporttpt@gmail.com, call us at +91 9544946511 (Mon-Sat, 9AM-6PM), or use the live chat on our website."
+        a: "You can reach us via email at supporttpt@gmail.com, call us at +91 9447540035 (Mon-Sat, 9AM-6PM), or use the live chat on our website."
       },
       {
         q: "Do you offer bulk or wholesale orders?",
@@ -199,7 +199,7 @@ export default function FAQPage() {
                 Email Support
               </a>
               <a
-                href="tel:+919544946511"
+                href="tel:+919447540035"
                 className="px-4 py-2 bg-blue-700 text-white rounded-lg font-medium hover:bg-blue-800 transition-colors"
               >
                 Call Us

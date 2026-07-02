@@ -154,7 +154,7 @@ export default function Footer() {
               <h3 className="text-white font-semibold mb-4 text-sm">Contact Us</h3>
               <div className="space-y-2 text-xs text-gray-400">
                 <p>Email: supporttpt@gmail.com</p>
-                <p>Phone: +91 9544946511</p>
+                <p>Phone: +91 9447540035</p>
                 <p>Hours: Mon-Sat, 9AM-6PM</p>
               </div>
               {/* Social Icons */}
