@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  :core:network needs ACCESS_NETWORK_STATE for ConnectivityObserver's use of
+  ConnectivityManager (activeNetwork / getNetworkCapabilities /
+  registerNetworkCallback) — declared here (not just in :app) so Android
+  Lint's per-module MissingPermission check passes when this library is
+  linted on its own, and so the requirement travels with the module that
+  actually needs it rather than relying on every consuming app to remember
+  to add it.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+</manifest>

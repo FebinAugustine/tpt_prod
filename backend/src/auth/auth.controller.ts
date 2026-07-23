@@ -38,6 +38,7 @@ import { RegisterDto } from './dto/register.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { AddUserDto } from './dto/add-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { WrapResponse } from '../common/decorators/wrap-response.decorator';
@@ -95,11 +96,18 @@ export class AuthController {
   @Post('logout')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'User logout', description: 'Logout user and clear cookies' })
+  @ApiOperation({ summary: 'User logout', description: 'Logout user and clear cookies. Mobile clients (no cookie jar) should pass refreshToken in the body.' })
   @ApiBearerAuth()
-  async logout(@Request() req: any, @Res({ passthrough: true }) res: Response) {
+  @ApiBody({ type: RefreshTokenDto, required: false })
+  async logout(
+    @Request() req: any,
+    @Body() body: RefreshTokenDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     const userId = req.user.sub;
-    const refreshToken = req.cookies?.refreshToken;
+    // Web: refresh token lives in the httpOnly cookie.
+    // Mobile: no cookie jar, so it's passed explicitly in the body.
+    const refreshToken = req.cookies?.refreshToken || body?.refreshToken;
 
     if (refreshToken) {
       try {
@@ -150,10 +158,21 @@ export class AuthController {
   @UseGuards(ThrottlerGuard)
   @Throttle({ strict: { limit: 5, ttl: 60 } })
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Refresh access token', description: 'Get new access token using refresh token' })
+  @ApiOperation({
+    summary: 'Refresh access token',
+    description:
+      'Get a new access + refresh token pair using the current refresh token. Web clients rely on the httpOnly cookie; mobile clients (no cookie jar) pass refreshToken in the body and receive the new pair back in the JSON response.',
+  })
+  @ApiBody({ type: RefreshTokenDto, required: false })
   @ApiOkResponse({ description: 'Token refreshed' })
-  async refresh(@Request() req: any, @Res({ passthrough: true }) res: Response) {
-    const refreshToken = req.cookies?.refreshToken;
+  async refresh(
+    @Request() req: any,
+    @Body() body: RefreshTokenDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    // Web: refresh token lives in the httpOnly cookie.
+    // Mobile: no cookie jar, so it's passed explicitly in the body.
+    const refreshToken = req.cookies?.refreshToken || body?.refreshToken;
 
     if (!refreshToken) {
       res.clearCookie('accessToken', { path: '/' });
@@ -207,7 +226,16 @@ export class AuthController {
 
       res.cookie('accessToken', newAccessToken, accessCookieOptions);
       res.cookie('refreshToken', newRefreshToken, refreshCookieOptions);
-      return { success: true, message: 'Token refreshed' };
+
+      // Tokens are returned in the body too (not just cookies) so mobile
+      // clients — which ignore Set-Cookie — can persist the rotated pair
+      // themselves. Web clients simply ignore these extra fields.
+      return {
+        success: true,
+        message: 'Token refreshed',
+        accessToken: newAccessToken,
+        refreshToken: newRefreshToken,
+      };
     } catch {
       res.clearCookie('accessToken', { path: '/' });
       res.clearCookie('refreshToken', { path: '/' });

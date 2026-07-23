@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Backs the FileProvider declared in AndroidManifest.xml — exposes only the
+  "exports" subfolder of the app's cache dir (see BackupRepositoryImpl in
+  :feature:admin), not the whole cache directory.
+-->
+<paths>
+    <cache-path name="exports" path="exports/" />
+</paths>

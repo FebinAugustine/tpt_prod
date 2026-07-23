@@ -1,0 +1,16 @@
+# --- DEVELOPMENT IMAGE ---
+# Not used in production. Installs devDependencies, runs Nest in --watch mode.
+# Source is bind-mounted by docker-compose.yml, so COPY here just seeds the
+# image for the first `docker compose up --build` before the volume takes over.
+FROM node:22-alpine
+
+WORKDIR /usr/src/app
+
+COPY package*.json ./
+RUN npm install
+
+COPY . .
+
+EXPOSE 5000
+
+CMD ["npm", "run", "start:dev"]

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Standalone white dumbbell mark for the Splash screen (2026-07-23) — same
+  proportions as :app's launcher-icon foreground
+  (mobile/app/src/main/res/drawable/ic_launcher_foreground.xml) so the splash
+  and the launcher icon read as the same brand mark, just rendered at
+  different sizes/contexts. Kept as its own drawable (rather than reusing the
+  :app one directly) since :feature:auth cannot depend on :app's resources.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- center bar -->
+    <path android:fillColor="#FFFFFFFF" android:pathData="M36,51 L72,51 L72,57 L36,57 Z" />
+    <!-- left plate (outer) -->
+    <path android:fillColor="#FFFFFFFF" android:pathData="M31.8,40.2 L40.2,40.2 L40.2,67.8 L31.8,67.8 Z" />
+    <!-- right plate (outer) -->
+    <path android:fillColor="#FFFFFFFF" android:pathData="M67.8,40.2 L76.2,40.2 L76.2,67.8 L67.8,67.8 Z" />
+    <!-- left plate (inner accent, slightly transparent for depth) -->
+    <path android:fillColor="#33178C3B" android:pathData="M36.24,44.4 L41.64,44.4 L41.64,63.6 L36.24,63.6 Z" />
+    <!-- right plate (inner accent, slightly transparent for depth) -->
+    <path android:fillColor="#33178C3B" android:pathData="M66.36,44.4 L71.76,44.4 L71.76,63.6 L66.36,63.6 Z" />
+</vector>

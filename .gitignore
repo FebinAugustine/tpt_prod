@@ -1,41 +1,85 @@
 # Dependencies
-/node_modules
-backend/node_modules
-frontend/node_modules
+node_modules/
+**/node_modules/
 .kilo
 
 # Build outputs
-/dist
-/build
-/.next
-/out
-/coverage
-/*.tsbuildinfo
-backend/dist
-backend/coverage
-frontend/dist
-frontend/.next
-frontend/build
-frontend/coverage
+/dist/
+/build/
+/out/
+/coverage/
+*.tsbuildinfo
+**/*.tsbuildinfo
+**/build/
+**/dist/
+**/out/
+**/coverage/
+**/.next/
+**/.cache/
+**/.gradle/
+**/.artifacts/
+
+# Frontend / Next.js
+frontend/.next/
+frontend/.turbo/
+frontend/playwright-report/
+frontend/test-results/
+frontend/coverage/
+frontend/tsc-errors.txt
+frontend/*.tsbuildinfo
+
+# Backend / NestJS
+backend/dist/
+backend/coverage/
+backend/logs/
+backend/build_output.txt
+backend/tsc-errors.txt
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# Mobile / Android
+mobile/.gradle/
+mobile/build/
+mobile/**/build/
+mobile/app/build/
+mobile/**/*.iml
+mobile/local.properties
+mobile/.kotlin/
+mobile/.idea/
+
+# Playwright / Vitest
+frontend/playwright-report/
+frontend/test-results/
+frontend/coverage/
 
 # Logs
-logs
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
+pnpm-debug.log*
+*.out
 
-# Environment files (all .env files except examples)
+# Environment files
 .env
 .env.*
 !.env.example
-backend/.env
-frontend/.env
+!.env.dev.example
+!.env.prod.example
+!backend/.env.example
+!frontend/.env.example
+**/.env
+**/.env.*
+!**/.env.example
+!**/.env.dev.example
+!**/.env.prod.example
 
 # Docker
 docker-compose.override.yml
 
 # OS
 .DS_Store
+Thumbs.db
 
 # IDEs
 .idea/
@@ -43,3 +87,4 @@ docker-compose.override.yml
 .kilo
 *.swp
 *.swo
+*.tmp

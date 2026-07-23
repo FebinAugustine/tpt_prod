@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Debug-variant manifest override. Merged on top of src/main/AndroidManifest.xml
+  for debug builds only — adds the cleartext network security config so the
+  app can reach a local HTTP backend (see core/network's debug API_BASE_URL).
+  Release builds never see this file, so production stays HTTPS-only.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <application
+        android:networkSecurityConfig="@xml/network_security_config"
+        tools:targetApi="28" />
+</manifest>

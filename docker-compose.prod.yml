@@ -1,0 +1,203 @@
+
+networks:
+  web:
+    driver: bridge
+  internal:
+    driver: bridge
+
+volumes:
+  mongo_data:
+  redis_data:
+
+services:
+  # --- EDGE ROUTER, SSL, & TRAFFIC FILTERING ---
+  traefik:
+    image: traefik:v3.6.1
+    container_name: traefik
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - DOCKER_API_VERSION=1.40
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - web
+    ports:
+      - "0.0.0.0:80:80"
+      - "0.0.0.0:443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./acme.json:/acme.json
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      
+      # FIX 1: Activated production ACME validation (Removed Staging limits)
+      - "--certificatesresolvers.myresolver.acme.httpchallenge=true"
+      - "--certificatesresolvers.myresolver.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.myresolver.acme.email=${LETSENCRYPT_EMAIL}"
+      - "--certificatesresolvers.myresolver.acme.storage=/acme.json"
+      
+      # FIX 2: Correct Traefik v3 lowercase syntax for global HTTPS redirect
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+
+  # --- DATABASE ---
+  mongodb:
+    image: mongo:7.0
+    container_name: mongodb
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - internal
+      - web  # FIX 3: Placed on web network to ensure cross-interface DNS visibility
+    healthcheck:
+      test: echo 'db.runCommand({ping:1})' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1500M
+
+  # --- CACHE ---
+  redis:
+    image: redis:7.2-alpine
+    container_name: redis
+    restart: unless-stopped
+    env_file: .env
+    command: redis-server --requirepass ${REDIS_PASSWORD} --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    networks:
+      - internal
+      - web  # FIX 4: Placed on web network to ensure cross-interface DNS visibility
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 384M
+
+  # --- NESTJS BACKEND ---
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - web
+      - internal
+    environment:
+      - NODE_ENV=production
+      - PORT=5000
+      - MONGODB_URI=mongodb://${MONGO_ROOT_USER}:${MONGO_ROOT_PASSWORD}@mongodb:27017/tptappdb?authSource=admin
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
+      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
+      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
+      - RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID}
+      - RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET}
+      - SMTP_PASS=${SMTP_PASSWORD}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_FROM=${SMTP_FROM}
+      - FRONTEND_URL=https://${DOMAIN_NAME}
+      - CORS_ORIGINS=https://${DOMAIN_NAME},https://www.${DOMAIN_NAME}
+      - LOG_LEVEL=warn
+      - LOG_CONSOLE_ENABLED=false
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: '0.75'
+          memory: 1280M  # FIX 5: Raised from 768M to prevent compilation memory thrashing
+      update_config:
+        order: start-first    
+        parallelism: 1        
+        delay: 5s             
+        failure_action: rollback 
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend.rule=Host(`${DOMAIN_NAME}`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.backend.entrypoints=websecure"
+      - "traefik.http.routers.backend.tls.certresolver=myresolver"
+      # Force Traefik to exclusively target the 'web' bridge network interface for this container
+      - "traefik.docker.network=tpt_prod_web"
+
+      # 🚀 THE DEFINITIVE ROUTING FIX: Enforce priority over the frontend catch-all rule
+      - "traefik.http.routers.backend.priority=100"
+      
+      - "traefik.http.routers.backend.middlewares=backend-ratelimit,global-compress"
+      - "traefik.http.services.backend.loadbalancer.server.port=5000"
+      - "traefik.http.middlewares.backend-ratelimit.ratelimit.average=100"
+      - "traefik.http.middlewares.backend-ratelimit.ratelimit.burst=150"
+      - "traefik.http.middlewares.backend-ratelimit.ratelimit.period=1s"
+      - "traefik.http.middlewares.global-compress.compress=true"
+
+
+  # --- NEXTJS FRONTEND ---
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=https://${DOMAIN_NAME}/api/v1
+    restart: unless-stopped
+    env_file: .env
+    networks:
+      - web
+    environment:
+      - NODE_ENV=production
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M  # FIX 7: Slightly scaled up frontend headroom for NextJS runtime spikes
+      update_config:
+        order: start-first
+        parallelism: 1
+        delay: 5s
+        failure_action: rollback
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`${DOMAIN_NAME}`) || Host(`www.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.frontend.entrypoints=websecure"
+      - "traefik.http.routers.frontend.tls.certresolver=myresolver"
+      
+      # 🚀 LOWER PRIORITY: Ensures the frontend only captures requests that don't match the backend /api path
+      - "traefik.http.routers.frontend.priority=10"
+      
+      - "traefik.http.services.frontend.loadbalancer.server.port=3000"

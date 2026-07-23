@@ -15,23 +15,42 @@ import { Model } from 'mongoose';
 import { User, UserDocument } from './auth/schemas/user.schema';
 import * as bcrypt from 'bcryptjs';
 
-// Initial users to seed
-const INITIAL_USERS = [
-  {
-    fullName: 'Admin User',
-    email: 'supporttpt@gmail.com',
-    password: 'AdminTpt@2026',
-    role: 'admin',
-    isVerified: true,
-  },
-  {
-    fullName: 'Test User',
-    email: 'tpttest@gmail.com',
-    password: 'Tpttest@2026',
-    role: 'user',
-    isVerified: true,
-  },
-];
+// Initial users to seed. Dev gets fixed, easy-to-remember test credentials;
+// production keeps the real support/test accounts untouched.
+const INITIAL_USERS =
+  process.env.NODE_ENV === 'production'
+    ? [
+        {
+          fullName: 'Admin User',
+          email: 'supporttpt@gmail.com',
+          password: 'AdminTpt@2026',
+          role: 'admin',
+          isVerified: true,
+        },
+        {
+          fullName: 'Test User',
+          email: 'tpttest@gmail.com',
+          password: 'Tpttest@2026',
+          role: 'user',
+          isVerified: true,
+        },
+      ]
+    : [
+        {
+          fullName: 'Admin User',
+          email: 'admin@tpt.com',
+          password: 'Password@123',
+          role: 'admin',
+          isVerified: true,
+        },
+        {
+          fullName: 'Test User',
+          email: 'user@tpt.com',
+          password: 'Password@123',
+          role: 'user',
+          isVerified: true,
+        },
+      ];
 
 async function seedInitialUsers(app: any, logger: any) {
   const userModel = app.get(getModelToken(User.name)) as Model<UserDocument>;

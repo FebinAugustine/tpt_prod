@@ -9,12 +9,53 @@ activityCompose = "1.8.0"
 kotlin = "2.2.10"
 composeBom = "2026.02.01"
 
+# Feature-based modularization dependencies (added 2026-07-22)
+# NOTE: verify these against Maven Central on first Gradle sync — this
+# sandbox could not reach repo1.maven.org to hard-pin exact latest patch
+# versions, so treat these as "known-good recent" rather than bleeding edge.
+#
+# hilt: MUST be >= 2.59 with this project's AGP (9.3.0). Hilt's Gradle
+# plugin only gained AGP 9 support in 2.59 (2.58 and earlier fail with
+# "Android BaseExtension not found" against AGP 9 — legacy variant API
+# was dropped). 2.59.0's Gradle plugin also shipped with a runtime bug
+# (ComponentTreeDeps missing from the hilt-android artifact), fixed in
+# 2.59.2 — pin to 2.59.2 or newer, don't go back to 2.59.0/2.59.1.
+hilt = "2.59.2"
+hiltNavigationCompose = "1.2.0"
+retrofit = "3.0.0"
+okhttp = "5.1.0"
+kotlinxCoroutines = "1.9.0"
+kotlinxSerializationJson = "1.7.3"
+navigationCompose = "2.9.8"
+datastorePreferences = "1.1.1"
+coilCompose = "3.0.4"
+javaxInject = "1"
+# ZXing core (pure Java, no Android dependency) — used to render the UPI
+# deep-link ("upi://pay?...") as an on-device QR bitmap for :feature:checkout.
+# Mirrors the frontend's qrcode.react usage: no backend QR-generation
+# endpoint exists, the QR is built client-side from the merchant UPI ID.
+zxing = "3.5.3"
+
+# kapt is NOT usable on this project: AGP 9's built-in Kotlin compilation
+# support is incompatible with the org.jetbrains.kotlin.kapt plugin outright
+# ("not compatible with built-in Kotlin support"). KSP is Google's own
+# recommended replacement and is what Hilt's docs point annotation
+# processing at going forward — use ksp(...) instead of kapt(...) for the
+# Hilt compiler everywhere. KSP 2.3.1 added AGP 9/built-in-Kotlin support;
+# 2.3.5 fixed a KSP/kapt circular-dependency bug specific to AGP 9 — pin to
+# 2.3.5 or newer.
+ksp = "2.3.9"
+
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
 androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
+# Provides collectAsStateWithLifecycle() — used by :app's AppNavHost to
+# collect MainScaffoldViewModel's cart/wishlist StateFlows for the bottom
+# nav bar's badge counts (added 2026-07-22, bottom-nav-bar feature).
+androidx-lifecycle-runtime-compose = { group = "androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "lifecycleRuntimeKtx" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
 androidx-compose-ui = { group = "androidx.compose.ui", name = "ui" }
@@ -24,8 +65,57 @@ androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "u
 androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
+# Version managed by the compose BOM (composeBom above) — full icon set beyond
+# material3's small built-in baseline, needed across cart/checkout/orders/profile.
+androidx-compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
+
+hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
+# NOTE: this is the KSP-compatible compiler artifact (per dagger.dev/dev-guide/ksp.html),
+# consumed via ksp(...) — NOT "hilt-android-compiler", which is kapt-only.
+hilt-compiler = { group = "com.google.dagger", name = "hilt-compiler", version.ref = "hilt" }
+hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-compose", version.ref = "hiltNavigationCompose" }
+
+retrofit-core = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
+retrofit-converter-kotlinx-serialization = { group = "com.squareup.retrofit2", name = "converter-kotlinx-serialization", version.ref = "retrofit" }
+okhttp-core = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
+okhttp-logging-interceptor = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "okhttp" }
+
+kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "kotlinxCoroutines" }
+kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
+
+androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
+androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastorePreferences" }
+
+coil-compose = { group = "io.coil-kt.coil3", name = "coil-compose", version.ref = "coilCompose" }
+coil-network-okhttp = { group = "io.coil-kt.coil3", name = "coil-network-okhttp", version.ref = "coilCompose" }
+
+# JSR-330 annotations (@Inject, @Qualifier, @Singleton). :core:common uses
+# @Qualifier for its dispatcher annotations but deliberately doesn't depend
+# on Hilt/Dagger itself (it's meant to stay framework-light) — this is the
+# tiny standalone artifact those annotations actually live in.
+javax-inject = { group = "javax.inject", name = "javax.inject", version.ref = "javaxInject" }
+
+zxing-core = { group = "com.google.zxing", name = "core", version.ref = "zxing" }
+
+# Plugin-artifact coordinates (NOT applied via alias() in module build.gradle.kts —
+# these are consumed as compileOnly classpath deps by build-logic/convention so the
+# convention plugins' Kotlin code can call `pluginManager.apply("...")` for each and
+# see the relevant Gradle/AGP/Kotlin API types. Same version.ref as the matching
+# [plugins] entry below, so bumping one bumps both. NOTE: same caveat as the rest of
+# this catalog (see gap #1 in root CLAUDE.md) — this sandbox has no route to Maven
+# Central, so these are "known-good coordinates" per each tool's own publishing
+# convention, not curl-verified. Confirm on first build-logic sync.
+android-gradlePlugin = { group = "com.android.tools.build", name = "gradle", version.ref = "agp" }
+kotlin-gradlePlugin = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin", version.ref = "kotlin" }
+compose-compiler-gradlePlugin = { group = "org.jetbrains.kotlin", name = "compose-compiler-gradle-plugin", version.ref = "kotlin" }
+kotlin-serialization-gradlePlugin = { group = "org.jetbrains.kotlin", name = "kotlin-serialization", version.ref = "kotlin" }
+ksp-gradlePlugin = { group = "com.google.devtools.ksp", name = "symbol-processing-gradle-plugin", version.ref = "ksp" }
+hilt-gradlePlugin = { group = "com.google.dagger", name = "hilt-android-gradle-plugin", version.ref = "hilt" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
+android-library = { id = "com.android.library", version.ref = "agp" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
-
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+hilt-android = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }

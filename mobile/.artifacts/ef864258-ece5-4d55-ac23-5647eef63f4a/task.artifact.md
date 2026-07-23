@@ -1,4 +1,4 @@
-- [ ] Remove invalid cast in `MainActivity.kt`
-- [ ] Remove unnecessary import in `MainActivity.kt`
-- [ ] Build and deploy the application
-- [ ] Verify fix in Logcat
+- [x] Remove invalid cast in `MainActivity.kt`
+- [x] Remove unnecessary import in `MainActivity.kt`
+- [x] Build and deploy the application
+- [x] Verify fix in Logcat

@@ -15,6 +15,4 @@ I fixed a startup crash caused by an invalid cast in `MainActivity.kt`.
 ### Manual Verification
 - Deployed the application to the emulator.
 - Verified in Logcat that the application starts without `ClassCastException`.
-- Confirmed the UI is correctly displayed via screenshot.
-
-![Login Screen](file:///I:/Dev/ClaudeWorkspace/Project-ThePowerTrainer/mobile/.artifacts/ef864258-ece5-4d55-ac23-5647eef63f4a/screenshot.png)
+- Confirmed the UI (Login Screen) is correctly displayed.
